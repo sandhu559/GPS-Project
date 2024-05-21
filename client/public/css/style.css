@@ -1,0 +1,8 @@
+
+body {
+    font-family: "poppins" ,sans-serif;
+    background-image: url('../assets/navfleet.jpg');
+    background-size: cover;
+    background-position: center;
+    background-color: rgb(146, 28, 28);
+}
