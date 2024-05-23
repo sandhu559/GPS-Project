@@ -1,0 +1,2946 @@
+﻿openapi: 3.1.0
+
+# Metadata
+info:
+  title: 'Trak-4 GPS Tracking API'
+  description: > 
+               - Trak-4 Tracking API | VERSION 3.0.1 | [Change Log](https://gist.github.com/Brian-Webster/d7f4258ccf24d29c10ff30340e77586d)
+
+               - API endpoint: https://api-v3.trak-4.com/INSERT_API_COMMAND_PATH
+
+               - Locate your API key in Org Settings (business users) or User Settings (consumer users)
+
+               - IP Restriction is available in Org Settings (business users) or User Settings (consumer users)
+
+               - Quick Start: (1) Test Command (2) Get Devices Command
+
+               - You may request rate limit adjustments by contacting support and describing your use case
+  termsOfService: 'https://gps.trak-4.com/Account/TOS/gps.trak-4.com.html'
+  contact:
+    email: 'support@trak-4.com'
+  version: '3.0.1'
+servers:
+- url: 'https://api-v3.trak-4.com'
+paths:                  
+
+
+####################################################################################################
+####################################################################################################
+### IMPORT 100% OF BELOW FROM MASTER CONFIG FILE 
+####################################################################################################
+####################################################################################################
+
+
+
+
+
+####################################################################################################
+### API Commands
+####################################################################################################
+
+### API Command - Get Devices
+  /device_list:
+    post:
+      tags: 
+       - Devices
+      summary: Get Device List
+      description: > 
+                   - Returns an array of Device Objects sorted by DeviceID. 
+                   
+                   - Pagination is available and is automatic for device lists of greater than 1000 devices.
+
+                    - Pagination return and request parameters may be ignored entirely for device lists of less than 1000 devices.
+
+                    - Page size is 1000 devices.                                      
+
+                    - Each request returns Page (current page number) and TotalPages
+                    
+                    - You may optionally included PageNum in the request to specificy the desired page of devices
+
+                    - This command is available to all account types
+      operationId: GetDeviceList
+      responses:
+        '200':
+          description: Returns an array of Device Objects
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                - Devices
+                - PageNum
+                - RequestInfo
+                - TotalPages
+                properties:
+                  Devices:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/Device'
+                    description: 'Array of Device objects. Device information includes latest GPS coordinates, report time, and voltage level.'
+                  PageNum:
+                    type: integer
+                    format: int32
+                    example: 1
+                    description: The current page number.
+                  RequestInfo:
+                    $ref: '#/components/schemas/RequestInfo'
+                  TotalPages:
+                    type: integer
+                    format: int32
+                    example: 2
+                    description: The total number of pages
+        '400':
+          description: Bad Request
+          content:
+            'application/json':
+              schema:
+                $ref: '#/components/schemas/General_Error'
+        '404':
+          description: 'No devices were found that match the request parameters'
+          content:
+            'application/json':
+              schema:
+                $ref: '#/components/schemas/General_Error'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+              - 'APIKey'
+              properties:
+                APIKey:
+                  type: string
+                  example: 'insert_api_key'
+                  description: 'REQUIRED: All devices visible to API Key will be returned, subject to possible further filtering by the other optional input parameters.'
+                DeviceGroupID:
+                  description: >
+                               - OPTIONAL: restrict devices to those that are members of a specific device group.
+
+                               - You may provide a value of "-1" which shall equate to all devices that ARE NOT attached to a device group
+                  type: integer
+                  format: int32
+                  example: 2232                
+                OrgID:
+                  description: 'OPTIONAL: restrict devices to those visible to this Organization. This should only be used in situations where your organization has sub-organizations and you desire to select a sub-organization''s devices.'
+                  type: integer
+                  format: int32
+                  example: 123566
+                Page:
+                  type: integer
+                  format: int32
+                  example: 1
+                  description: 'OPTIONAL: Page defaults to "1". If a previous request (A) returns 1000 devices and (B) has a TotalPages of >1, then you may repeat the command with Page=2 (up to TotalPages) to retrieve additional chunks of devices.'
+                ProductID:
+                  type: integer
+                  format: int32
+                  description: 'OPTIONAL: restrict devices to those with a specific Product Type'
+                SearchString:
+                  description: 'OPTIONAL: restrict devices to those with label fields containing this string (case-insensitive search)'
+                  type: string
+                  maxLength: 25
+                  minLength: 3
+                  
+### API Command - Get Device
+  /device:
+    post:
+      tags:
+       - Devices
+      summary: Get Device
+      description: > 
+                   - Returns a single Device Object based upon a DeviceID
+
+                   - This command is available to all account types                   
+      operationId: GetDeviceByID
+      responses:
+        '200':
+          description: Returns a single Device Object based upon a DeviceID
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  Device
+                    $ref: '#/components/schemas/Device':
+                  RequestInfo:
+                    $ref: '#/components/schemas/RequestInfo'
+        '400':
+          description: Bad Request
+          content:
+            'application/json':
+              schema:
+                $ref: '#/components/schemas/General_Error'
+        '404':
+          description: Not Found
+          content:
+            'application/json':
+              schema:
+                $ref: '#/components/schemas/General_Error'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+              - 'APIKey'
+              - 'DeviceID'
+              properties:
+                APIKey:
+                  type: string
+                  example: 'insert_api_key'
+                  description: 'REQUIRED'
+                DeviceID:
+                  type: integer
+                  format: int32
+                  example: '123566'
+                  description: 'REQUIRED: DeviceID of the device to be retrieved'
+              
+
+
+### API Command - Get Reports (Extended) for Single Device                  
+  /gps_report_extended_list:
+    post:
+      tags: 
+      - GPS Reports
+      summary: Get GPS Reports (EXTENDED)
+      description: > 
+                   - Identical to /gps_report_list command but with extra fields including input fields, param fields, voltage2, and temp2
+
+                   - This command should only be used for trackers with multi-input capability (example: Bilge1 input, Bilge2 input, Tank level monitoring, etc)
+
+                   - This command should not be used for trackers with only USB, 12-volt, or solar inputs as the additional fields would never be populated. 
+
+      operationId: GetDeviceGPSReportsExtended
+      responses:
+        '200':
+          description: Returns an array of GPS Report (EXTENDED) Objects for a specific device
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  GPS_Reports:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/GPS_Report_Extended'
+                    description: 'Array of GPS Report (EXTENDED) objects.'
+                  RequestInfo:
+                    $ref: '#/components/schemas/RequestInfo'
+        '400':
+          description: Bad Request
+          content:
+            'application/json':
+              schema:
+                $ref: '#/components/schemas/General_Error'
+        '404':
+          description: 'No gps reports were found that matches the request parameters'
+          content:
+            'application/json':
+              schema:
+                $ref: '#/components/schemas/General_Error'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+              - 'APIKey'
+              - 'DeviceID'
+              - 'DateTime_Start'
+              properties:
+                APIKey:
+                  type: string
+                  example: 'insert_api_key'
+                  description: 'REQUIRED'
+                DeviceID:
+                  type: integer
+                  format: int32
+                  example: '123566'
+                  description: 'REQUIRED: DeviceID of the device'
+                DateTime_Start:
+                  type: string
+                  format: date-time
+                  example: '2021-08-27T23:21:50Z'
+                  description: 'REQUIRED Filter Parameter: Retrieve reports on or after this UTC datetime'
+                DateTime_End:
+                  type: string
+                  format: date-time
+                  example: '2021-08-27T23:21:50Z'
+                  description: >
+                               - OPTIONAL Filter Parameter
+                               
+                               - Retrieve reports on or before this UTC datetime. 
+                               
+                               - If this parameter is not supplied, the system will use DateTime_Start +24hrs as DateTime_End
+                               
+                               - If this parameter is > +24hrs from DateTime_Start, then this parameter will be clamped to +24hrs from DateTime_Start
+                FilterByReceivedTime:
+                  type: boolean
+                  example: true
+                  description: > 
+                               - OPTIONAL
+
+                               - It is strongly recommended to ignore this field or to supply it with a value of true
+
+                               - ReceivedTime is always reliable, but GPS Report CreateTime can vary in reliability under certain conditions, such as when the tracker goes through an extended period with no GPS signal and no cell signal.
+
+                               - If this parameter is supplied with a value of false, then the gps reports will be filtered by CreateTime rather than ReceivedTime
+                                    
+
+### API Command - Get Serial Reports for Single Device                  
+  /serial_reports_list:
+    post:
+      tags: 
+      - Serial
+      summary: Get Serial Reports
+      description: >
+                   - Returns an array of Serial Report Objects for a specific device. 
+                   
+                   - The serial data is in the RawMessage field which will be delivered in a single string
+                   
+                    - The keys in the RawMessage "fluid" and are defined by the device or the device's CAN network
+
+                    - A key may be repeated several times within the RawMessage
+
+                    - The string will always begin with [ and end with ]
+
+                    - The RawMessage string may be tokenized in the following fashion: Trim [ and ], then split the string by comma and process each remaining key value pair.
+
+                    - Sample contents of the RawMessage field: [{"can":"1"},{"e0es":"794"},{"e1es":"0"},{"e0fr":"0.0"},{"e0op":"13.7"},{"e0ct":"81.5"},{"e0vo":"27.0"},{"e0eh":"14564.6"}]
+
+                   - This command is available to all account types, but only applies to CAN-enabled trackers
+      operationId: GetDeviceSerialReports
+      responses:
+        '200':
+          description: Returns an array of Serial Report Objects for a specific device
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  Serial_Reports:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/Serial_Report'
+                    description: 'Array of Serial Report objects.'
+                  RequestInfo:
+                    $ref: '#/components/schemas/RequestInfo'
+        '400':
+          description: Bad Request
+          content:
+            'application/json':
+              schema:
+                $ref: '#/components/schemas/General_Error'
+        '404':
+          description: 'No serial reports were found that matches the request parameters'
+          content:
+            'application/json':
+              schema:
+                $ref: '#/components/schemas/General_Error'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+              - 'APIKey'
+              - 'DeviceID'
+              - 'DateTime_Start'
+              properties:
+                APIKey:
+                  type: string
+                  example: 'insert_api_key'
+                  description: 'REQUIRED'
+                DeviceID:
+                  type: integer
+                  format: int32
+                  example: '123566'
+                  description: 'REQUIRED: DeviceID of the device'
+                DateTime_Start:
+                  type: string
+                  format: date-time
+                  example: '2021-08-27T23:21:50Z'
+                  description: 'REQUIRED Filter Parameter: Retrieve reports on or after this UTC datetime'
+                DateTime_End:
+                  type: string
+                  format: date-time
+                  example: '2021-08-27T23:21:50Z'
+                  description: 'OPTIONAL Filter Parameter: Retrieve reports on or before this UTC datetime. If this parameter is not supplied, the system will use DateTime_Start +24hrs as DateTime_End'                  
+
+### API Command - Get Orgs
+  /org_list:
+    post:
+      tags: 
+      - Organizations
+      summary: 'Get Organization List'
+      description: >
+                   - Returns an array of Org Objects
+
+                   - This command is available only to business accounts. Your account type is visible from your user settings page. You may contact support to transition to a business account (this is helpful if managing many devices). 
+      operationId: 'GetOrgList'
+      responses:
+        '200':
+          description: 'Returns an array of Org Objects'
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  Orgs:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/Org'
+                    description: 'Array of Org objects.'
+                  RequestInfo:
+                    $ref: '#/components/schemas/RequestInfo'
+        '400':
+          description: Bad Request
+          content:
+            'application/json':
+              schema:
+                $ref: '#/components/schemas/General_Error'
+        '404':
+          description: 'No organizations were found that match the request parameters'
+          content:
+            'application/json':
+              schema:
+                $ref: '#/components/schemas/General_Error'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+              - 'APIKey'
+              properties:
+                APIKey:
+                  type: string
+                  example: 'insert_api_key'
+                  description: 'REQUIRED'
+                OrgID:
+                  description: 'OPTIONAL: Show orgs owned by a particular organization. If this parameter is not supplied, then the OrgID attached to the APIKey will be utilized.'
+                  type: integer
+                  format: int32
+                  example: 123566        
+                  
+### API Command - Get Org
+  /org:
+    post:
+      tags: 
+      - Organizations
+      summary: 'Get Organization'
+      description: >
+                   - Returns a single Org Object based upon an OrgID
+
+                   - This command is available only to business accounts. Your account type is visible from your user settings page. You may contact support to transition to a business account (this is helpful if managing many devices). 
+      operationId: 'GetOrg'
+      responses:
+        '200':
+          description: 'Returns a single Org Object based upon an OrgID'
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  Org:
+                    $ref: '#/components/schemas/Org'                    
+                  RequestInfo:
+                    $ref: '#/components/schemas/RequestInfo'
+        '400':
+          description: Bad Request
+          content:
+            'application/json':
+              schema:
+                $ref: '#/components/schemas/General_Error'
+        '404':
+          description: 'No org was found that matches the request parameters'
+          content:
+            'application/json':
+              schema:
+                $ref: '#/components/schemas/General_Error'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+              - 'APIKey'
+              properties:
+                APIKey:
+                  type: string
+                  example: 'insert_api_key'
+                  description: 'REQUIRED'
+                OrgID:
+                  description: 'REQUIRED'
+                  type: integer
+                  format: int32
+                  example: 256                       
+                  
+### API Command - Get Reporting Frequencies
+  /reporting_frequency_list:
+    post:
+      tags:
+       - Reporting Frequencies
+      summary: 'Get Reporting Frequency List'
+      description: >
+                   - Returns an array of Reporting Frequency Objects. 
+                   
+                   - This command may be used to retrieve a full list of Reporting Frequncies available to: 
+                   
+                    - (1) an entire account or 
+                    
+                    - (2) a particular product type or 
+                    
+                    - (3) a particular device. A reporting frequency has a ProductID. 
+
+                   - A reporting frequency may only be applied to devices with that same ProductID. 
+                   
+                   - ProductID Examples: Gen3 USB, Gen3 12volt, and Gen3 Solar each have their own ProductID. 
+                   
+                   - When presenting available reporting frequencies to your users: 
+                   
+                    - (A) retrieve the device''s ProductID 
+                    
+                    - (B) retrieve the available frequencies for that ProductID 
+                    
+                    - (C) present those reporting frequency options to the user.
+
+                   - For consumer account types, it is required to select reporting frequencies by DeviceID so that subscription and free trial information may be taken into account. You may view your account type in account settings. 
+
+                   - If your organization requires additional reporting frequencies to be assigned to your organization, please contact support
+
+                   - This command is available to all account types
+
+      operationId: 'GetReportingFreqListDevice'
+      responses:
+        '200':
+          description: 'Returns an array of Reporting Frequency Objects'
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  Reporting_Frequencies:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/Reporting_Frequency'
+                    description: 'An array of reporting frequencies. A reporting frequency is a GPS tracker configuration. A GPS tracker may be made to report rapidly or slowly depending upon use case and desired battery consumption.'
+                  RequestInfo:
+                    $ref: '#/components/schemas/RequestInfo'
+        '400':
+          description: Bad Request
+          content:
+            'application/json':
+              schema:
+                $ref: '#/components/schemas/General_Error'
+        '404':
+          description: 'No reporting frequencies were found that match the request parameters'
+          content:
+            'application/json':
+              schema:
+                $ref: '#/components/schemas/General_Error'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+              - 'APIKey'
+              properties:
+                APIKey:
+                  type: string
+                  example: 'insert_api_key'
+                  description: 'REQUIRED'
+                DeviceID:
+                  type: integer
+                  format: int32
+                  example: '123566'
+                  description: > 
+                               - OPTIONAL: If provided, only the reporting frequencies available to a particular device will be returned.
+
+                               - For consumer account types, it is required to select reporting frequencies by DeviceID so that subscription and free trial information may be taken into account. You may view your account type in account settings
+                ProductID:
+                  type: integer
+                  format: int32
+                  example: '54'
+                  description: 'OPTIONAL: If provided, only the reporting frequencies available to a particular product type will be returned.'
+                  
+### API Command - Test Command
+  /test:
+    post:
+      tags:
+       - Util
+      summary: 'Test Command'
+      description: 'This command simply returns a "Test Success" string.'      
+      operationId: 'Test'
+      responses:
+        '200':
+          description: 'This command simply returns a "Test Success" string and is designed to assist with coding in a "hello world" fashion'
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  Message:
+                    type: string
+                    maxLength: 255
+                    example: 'Test Success'
+                    description: 'The value of Message is always "Test Success"'
+                  RequestInfo:
+                    $ref: '#/components/schemas/RequestInfo'
+        '400':
+          description: 'Bad Request'
+          content:
+            'application/json':
+              schema:
+                $ref: '#/components/schemas/General_Error'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+              - 'APIKey'
+              properties:
+                APIKey:
+                  type: string
+                  example: 'insert_api_key'
+                  description: 'REQUIRED'                  
+                  
+### API Command - Get Users
+  /user_list:
+    post:
+      tags:
+       - Users
+      summary: 'Get User List'
+      description: >
+                   - Returns an array of User Objects which belong to a particular organization
+
+                   - This command is available only to business accounts. Your account type is visible from your user settings page. You may contact support to transition to a business account (this is helpful if managing many devices).
+      operationId: 'GetUserList'
+      responses:
+        '200':
+          description: 'Returns an array of User Objects'
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  Users:
+                    type: array                
+                    items:
+                      $ref: '#/components/schemas/User'
+                    description: 'Array of User objects.'
+                  RequestInfo:
+                    $ref: '#/components/schemas/RequestInfo'
+        '400':
+          description: 'Bad Request'
+          content:
+            'application/json':
+              schema:
+                $ref: '#/components/schemas/General_Error'
+        '404':
+          description: 'No users were found that match the request parameters'
+          content:
+            'application/json':
+              schema:
+                $ref: '#/components/schemas/General_Error'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+              - 'APIKey'
+              - 'OrgID'
+              properties:
+                APIKey:
+                  type: string
+                  example: 'insert_api_key'
+                  description: 'REQUIRED'
+                OrgID:
+                  type: integer
+                  format: int32
+                  example: '123566'
+                  description: 'REQUIRED: User records each have an OrgID which represents the organization which owns the user.'
+                  
+### API Command - Get User
+  /user:
+    post:
+      tags:
+       - Users
+      summary: 'Get User'
+      description: > 
+                   - Returns a User Object. 
+                   
+                   - If the API_Key has access to a user, either through the top-level organization or through a sub-organization, the user with the supplied UserID will be returned.
+                   
+                   - This command is available only to business accounts. Your account type is visible from your user settings page. You may contact support to transition to a business account (this is helpful if managing many devices). 
+      operationId: 'GetUser'
+      responses:
+        '200':
+          description: 'Returns a User Object based upon a UserID'
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  User:
+                    $ref: '#/components/schemas/User'
+                  RequestInfo:
+                    $ref: '#/components/schemas/RequestInfo'
+        '400':
+          description: 'Bad Request'
+          content:
+            'application/json':
+              schema:
+                $ref: '#/components/schemas/General_Error'
+        '404':
+          description: 'No user was found that matches the request parameters'
+          content:
+            'application/json':
+              schema:
+                $ref: '#/components/schemas/General_Error'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+              - 'APIKey'
+              - 'UserID'
+              properties:
+                APIKey:
+                  type: string
+                  example: 'insert_api_key'
+                  description: 'REQUIRED'
+                UserID:
+                  type: integer
+                  format: int32
+                  example: '123566'
+                  description: 'REQUIRED: If the API_Key has access to a user, either through the top-level organization or through a sub-organization, the user with this UserID will be returned.'
+        
+### API Command - Request Update
+  /request_update:
+    post:
+      tags:
+       - Util
+      summary: Request update from CAN-enabled GPS tracker
+      description: >       
+                   - CAN-enabled GPS trackers usually have update-request capability
+
+                   - This command sends a signal to the tracker to request an update from the tracker
+
+                   - The device will normally respond within a few seconds a successful execution of this command by issuing a new GPS report
+      operationId: RequestUpdate
+      responses:
+        '200':
+          description: The Device returned a success response.
+          content:
+            'application/json':
+              schema:
+                $ref: '#/components/schemas/RequestInfo'
+        '400':
+          description: Bad Request
+          content:
+            'application/json':
+              schema:
+                $ref: '#/components/schemas/General_Error'
+        '404':
+          description: Not Found - unable to locate device
+          content:
+            'application/json':
+              schema:
+                $ref: '#/components/schemas/General_Error'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+              - 'APIKey'
+              - 'DeviceID'
+              properties:
+                APIKey:
+                  type: string
+                  example: 'insert_api_key'
+                  description: 'REQUIRED'
+                DeviceID:
+                  type: integer
+                  format: int32
+                  example: '123566'
+                  description: 'REQUIRED: Set the state of the control of the device with this DeviceID'
+
+### API Command - Set Control State (on/off)
+  /set_control_state:
+    post:
+      tags:
+       - Controls
+      summary: Set Control state (on/off)
+      description: >       
+                   - CAN-enabled GPS trackers usually have output controls (ignition, security, etc)
+
+                   - This command sends an "on" or "off" command to a control
+      operationId: SetControlState
+      responses:
+        '200':
+          description: The Device returned a success response.
+          content:
+            'application/json':
+              schema:
+                $ref: '#/components/schemas/RequestInfo'
+        '400':
+          description: Bad Request
+          content:
+            'application/json':
+              schema:
+                $ref: '#/components/schemas/General_Error'
+        '404':
+          description: Not Found - unable to locate device
+          content:
+            'application/json':
+              schema:
+                $ref: '#/components/schemas/General_Error'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+              - 'APIKey'
+              - 'ControlID'
+              - 'DeviceID'
+              - 'State'
+              properties:
+                APIKey:
+                  type: string
+                  example: 'insert_api_key'
+                  description: 'REQUIRED'
+                ControlID:
+                  type: integer
+                  format: int32
+                  example: '1'
+                  description: >
+                               - 1-based index
+                               
+                               - 1 = Control 1
+                               
+                               - 2 = Control 2
+                               
+                               - 3 = Control 3
+                DeviceID:
+                  type: integer
+                  format: int32
+                  example: '123566'
+                  description: 'REQUIRED: Set the state of the control of the device with this DeviceID'
+                State:
+                  type: integer
+                  format: inte32
+                  example: '1'
+                  description: >
+                               - 0 = Off
+
+                               - 1 = On
+
+### API Command - Set Reporting Frequency ReportingFrequencyID
+  /set_reporting_frequency:
+    post:
+      tags:
+       - Reporting Frequencies
+       - Devices
+      summary: Set Reporting Frequency
+      description: >
+                   - Sets a device's reporting frequency. 
+                   
+                   - The reporting frequency defines primarily how often the device sends a GPS report. 
+                   
+                   - The ideal reporting frequency varies by use case and desired battery consumption. 
+                   
+                   - The supplied ReportingFrequencyID must have the same ProductID as the destination device's ProductID.
+
+                   - This command is available to all account types
+      operationId: SetReportingFrequency
+      responses:
+        '200':
+          description: The Reporting Frequency has been queued for delivery to the device.
+          content:
+            'application/json':
+              schema:
+                $ref: '#/components/schemas/RequestInfo'
+        '400':
+          description: Bad Request - may include information such as "incompatible ProductID"
+          content:
+            'application/json':
+              schema:
+                $ref: '#/components/schemas/General_Error'
+        '404':
+          description: Not Found - unable to locate device or reporting frequency
+          content:
+            'application/json':
+              schema:
+                $ref: '#/components/schemas/General_Error'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+              - 'APIKey'
+              - 'DeviceID'
+              - 'ReportingFrequencyID'
+              properties:
+                APIKey:
+                  type: string
+                  example: 'insert_api_key'
+                  description: 'REQUIRED'
+                DeviceID:
+                  type: integer
+                  format: int32
+                  example: '123566'
+                  description: 'REQUIRED: Deliver the reporting frequency to the device with this DeviceID'
+                ReportingFrequencyID:
+                  type: integer
+                  format: int32
+                  example: 46
+                  description: 'The ID of the reporting frequency to send to the device.'
+           
+### API Command - Set Device Label
+  /set_device_label:
+    post:
+      tags:
+       - Devices
+      summary: Set Device Label
+      description: >       
+                   - The device label is a user-customizable string. The label is searchable within the UI. 
+
+                   - This command is available to all account types, but is most applicable to business accounts.
+      operationId: SetDeviceLabel
+      responses:
+        '200':
+          description: The Device Label has been saved.
+          content:
+            'application/json':
+              schema:
+                $ref: '#/components/schemas/RequestInfo'
+        '400':
+          description: Bad Request
+          content:
+            'application/json':
+              schema:
+                $ref: '#/components/schemas/General_Error'
+        '404':
+          description: Not Found - unable to locate device
+          content:
+            'application/json':
+              schema:
+                $ref: '#/components/schemas/General_Error'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+              - 'APIKey'
+              - 'DeviceID'
+              - 'Label'
+              properties:
+                APIKey:
+                  type: string
+                  example: 'insert_api_key'
+                  description: 'REQUIRED'
+                DeviceID:
+                  type: integer
+                  format: int32
+                  example: '123566'
+                  description: 'REQUIRED: Update the label of the device with this DeviceID'
+                Label:
+                  type: string
+                  maxLength: 64
+                  example: "Truck 34"
+                  description: 'The device label is a user-customizable string. The label is searchable within the UI.'
+
+### API Command - Set Device Note
+  /set_device_note:
+    post:
+      tags:
+       - Devices
+      summary: Set Device Note
+      description: >       
+                   - The device Note is a user-customizable string of up to 500 characters. The device note is searchable within the UI. 
+
+                   - This command is available to all account types, but is most applicable to business accounts.
+      operationId: SetDeviceNote
+      responses:
+        '200':
+          description: The Device Note has been saved.
+          content:
+            'application/json':
+              schema:
+                $ref: '#/components/schemas/RequestInfo'
+        '400':
+          description: Bad Request
+          content:
+            'application/json':
+              schema:
+                $ref: '#/components/schemas/General_Error'
+        '404':
+          description: Not Found - unable to locate device
+          content:
+            'application/json':
+              schema:
+                $ref: '#/components/schemas/General_Error'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+              - 'APIKey'
+              - 'DeviceID'
+              - 'Note'
+              properties:
+                APIKey:
+                  type: string
+                  example: 'insert_api_key'
+                  description: 'REQUIRED'
+                DeviceID:
+                  type: integer
+                  format: int32
+                  example: '123566'
+                  description: 'REQUIRED: Update the note of the device with this DeviceID'
+                Note:
+                  type: string
+                  maxLength: 500
+                  example: "Truck 34"
+                  description: 'The device note is a user-customizable string of up to 500 characters (< 100 is recommended). The note is searchable within the UI.'
+
+
+
+### API Command - Assign Device Group to Sub-Organization
+  /assign_device_group:
+    post:
+      tags: 
+       - Device Groups
+      summary: Assign Device Group to Sub-Org
+      description: > 
+                   - A Device group may be assigned to a sub-organization. 
+
+                   - This command supports assigning a device group to a sub-organization. See the unassign_device_group command for unassignment.
+
+                   - A Device Group may only be assigned to a sub-organization of the organization which owns the device group. 
+
+                   - You may view a list of sub-organizations by using the "Get Organization List" API command.
+
+                   - This command is available only to business accounts. Your account type is visible from your user settings page. You may contact support to transition to a business account (this is helpful if managing many devices). 
+      operationId: AssignDeviceGroup
+      responses:
+        '200':
+          description: The Device Group has been assigned.
+          content:
+            'application/json':
+              schema:
+                $ref: '#/components/schemas/RequestInfo'
+        '400':
+          description: Bad Request
+          content:
+            'application/json':
+              schema:
+                $ref: '#/components/schemas/General_Error'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+              - 'APIKey'
+              - 'DeviceGroupID'
+              - 'OrgID'
+              properties:
+                APIKey:
+                  type: string
+                  example: 'insert_api_key'
+                  description: 'REQUIRED'
+                DeviceGroupID:
+                  type: integer
+                  format: int32
+                  example: '3255'
+                  description: 'REQUIRED: This device group will be assigned to the organization with supplied OrgID parameter'
+                OrgID:
+                  type: integer
+                  format: int32
+                  example: 56
+                  description: > 
+                               - REQUIRED
+                               
+                               - The OrgID of the organization to assign this device group to
+
+                               - The assigned-to organization must be a child organization of the device group's owning organization
+
+                               - For example, if OrgID of 1 owns this device group and has a child organization (OrgID of 47), then 47 would be a valid OrgID parameter for this command
+
+
+
+### API Command - Assign devices to org
+  /assign_devices_to_org:
+    post:
+      tags: 
+       - Organizations
+       - Devices
+      summary: Assign Devices to Org
+      description: > 
+                   - This is a "meta" command which takes care of assigning one or more devices to a target organization
+
+                   - Internally, this will take care of all device group assignments and unassignments in order to assign the device(s) to the target organization
+
+                   - The target organization may be any organization within the API-key-owner-organization's org hierarchy
+
+                   - NOTE - some organizations utilize multiple device groups to link a parent organization to a child organization for the sake of device assignment
+
+                   - EXAMPLE - "Batch 1 units", "Batch 2 units", etc
+
+                   - This API command offers an optional parameter - PreferredDeviceGroupIDs
+
+                   - As the algorithm is plotting a path through your org tree to the target organization, it will utilize your PreferredDeviceGroupIDs when possible
+
+                   - NOTE - 95%+ of use cases do not need to utilize PreferredDeviceGroupIDs, but in those cases where it is helpful, it is likely to be a big time-saver
+
+                   - RATE LIMITS - This command costs 1 x Device_ID_Count within the rate limit system
+
+      operationId: AssignDevicesToOrg
+      responses:
+        '200':
+          description: The Device has been assigned to the target organization
+          content:
+            'application/json':
+              schema:
+                $ref: '#/components/schemas/RequestInfo'
+        '400':
+          description: Bad Request
+          content:
+            'application/json':
+              schema:
+                $ref: '#/components/schemas/General_Error'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+              - 'APIKey'
+              - 'DeviceIDs'
+              - 'OrgID'
+              properties:
+                APIKey:
+                  type: string
+                  example: 'insert_api_key'
+                  description: 'REQUIRED'
+                DeviceIDs:
+                    type: array
+                    items: 
+                        type: integer
+                    description: 'Array of one or more DeviceIDs'
+                    example: [28775]
+                OrgID:
+                  type: integer
+                  format: int32
+                  example: '35221'
+                  description: 'REQUIRED: Target Organization - The device(s) will be assigned to this organization'
+                PreferredDeviceGroupIDs:
+                    type: array
+                    items: 
+                        type: integer
+                    description: 'OPTIONAL - Usually omitted - As the algorithm is plotting a path through your org tree to the target organization, it will utilize your PreferredDeviceGroupIDs when possible'
+                    example: [1105, 705]
+
+
+### API Command - Assign device to device group
+  /assign_device_to_device_group:
+    post:
+      tags: 
+       - Device Groups
+       - Devices
+      summary: Assign Device to Device Group
+      description: > 
+                   - A device may be assigned to a single device group within an organization
+
+                   - For complex organizational hierarhcies, a device may reside in one device group in the Tier 1 org, then one device group in a Tier 2 org, and so on.
+
+                   - Assigning devices to device groups is the mechanism used to allocate devices to sub-organizations. For example, you may assign a dozen devices to a device group, then use the "Assign Device Group to Sub-Organization" API command to assign that device group to a sub-organization.
+
+                   - You may view a list of un-assigned devices by using the "Get Device List" API command with the DeviceGroupID parameter of "-1"
+
+                   - You may view a list of device-group-assigned devices by using the "Get Device List" API command with the appropriate DeviceGroupID parameter.
+
+                   - This command is available only to business accounts. Your account type is visible from your user settings page. You may contact support to transition to a business account (this is helpful if managing many devices). 
+      operationId: AssignDeviceToDeviceGroup
+      responses:
+        '200':
+          description: The Device has been assigned to the device group
+          content:
+            'application/json':
+              schema:
+                $ref: '#/components/schemas/RequestInfo'
+        '400':
+          description: Bad Request
+          content:
+            'application/json':
+              schema:
+                $ref: '#/components/schemas/General_Error'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+              - 'APIKey'
+              - 'DeviceGroupID'
+              - 'DeviceID'
+              properties:
+                APIKey:
+                  type: string
+                  example: 'insert_api_key'
+                  description: 'REQUIRED'
+                DeviceGroupID:
+                  type: integer
+                  format: int32
+                  example: '3255'
+                  description: 'REQUIRED: The device will be assigned to this Device Group'
+                DeviceID:
+                  type: integer
+                  format: int32
+                  example: '35221'
+                  description: 'REQUIRED: This Device will be assigned to the DeviceGroup'
+
+
+
+### API Command - Create Device Group
+  /create_device_group:
+    post:
+      tags: 
+       - Device Groups
+      summary: Create Device Group
+      description: >
+                   - Create a device group within an organization
+
+                   - This command is available only to business accounts. Your account type is visible from your user settings page. You may contact support to transition to a business account (this is helpful if managing many devices). 
+      operationId: CreateDeviceGroup
+      responses:
+        '200':
+          description: The Device Group has been created.
+          content:
+            'application/json':
+              schema:
+                type: object
+                properties:
+                  RequestInfo:
+                    $ref: '#/components/schemas/RequestInfo'
+                  DeviceGroupID:
+                    type: integer
+                    format: int32
+                    example: 3256
+                    description: 'The DeviceGroupID of the new device group'
+        '400':
+          description: Bad Request
+          content:
+            'application/json':
+              schema:
+                $ref: '#/components/schemas/General_Error'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+              - 'APIKey'
+              - 'DeviceGroupName'
+              - 'OrgID'
+              properties:
+                APIKey:
+                  type: string
+                  example: 'insert_api_key'
+                  description: 'REQUIRED'
+                DeviceGroupName:
+                  type: string
+                  maxLength: 64
+                  example: "Devices for Facility 14"
+                  description: 'REQUIRED: The name of the new device group'
+                OrgID:
+                  type: integer
+                  format: int32
+                  example: 56
+                  description: > 
+                               - REQUIRED
+                               
+                               - The OrgID of the organization which will own this device group
+
+### API Command - Delete Device Group
+  /delete_device_group:
+    post:
+      tags: 
+       - Device Groups
+      summary: Delete Device Group
+      description: >
+                   - Delete a device group
+
+                   - It is necessary to first clear devices out of a device group before deletion
+
+                   - This command is available only to business accounts. Your account type is visible from your user settings page. You may contact support to transition to a business account (this is helpful if managing many devices). 
+      operationId: DeleteDeviceGroup
+      responses:
+        '200':
+          description: The Device has been removed from the device group
+          content:
+            'application/json':
+              schema:
+                $ref: '#/components/schemas/RequestInfo'
+        '400':
+          description: Bad Request
+          content:
+            'application/json':
+              schema:
+                $ref: '#/components/schemas/General_Error'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+              - 'APIKey'
+              - 'DeviceGroupID'
+              properties:
+                APIKey:
+                  type: string
+                  example: 'insert_api_key'
+                  description: 'REQUIRED'
+                DeviceGroupID:
+                  type: integer
+                  format: int32
+                  example: '3255'
+                  description: 'REQUIRED: This device group will be deleted'
+
+### API Command - Get Device Groups
+  /devicegroup_list:
+    post:
+      tags:
+       - Device Groups
+      summary: Get Device Group List
+      description: > 
+                   - Returns an array of Device Group Objects. 
+                   
+                   - To retrieve a list of devices which are assigned to a device group, use the /device_list command along with the DeviceGroupID input parameter.
+                   
+                   - This command is available only to business accounts. Your account type is visible from your user settings page. You may contact support to transition to a business account (this is helpful if managing many devices). 
+      operationId: GetDeviceGroupsList
+      responses:
+        '200':
+          description: Returns an array of Device Group Objects
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  Device_Groups:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/Device_Group'
+                    description: 'Array of Device Groups'
+                  RequestInfo:
+                    $ref: '#/components/schemas/RequestInfo'
+        '400':
+          description: Bad Request
+          content:
+            'application/json':
+              schema:
+                $ref: '#/components/schemas/General_Error'
+        '404':
+          description: 'No device groups were found that match the request parameters'
+          content:
+            'application/json':
+              schema:
+                $ref: '#/components/schemas/General_Error'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+              - 'APIKey'
+              properties:
+                APIKey:
+                  type: string
+                  example: 'insert_api_key'
+                  description: 'REQUIRED'
+                OrgID:
+                  description: 'OPTIONAL: Show devices groups owned by a particular organization. If this parameter is not supplied, then the OrgID attached to the APIKey will be utilized.'
+                  type: integer
+                  format: int32
+                  example: 123566
+                  
+### API Command - Get Reports for Single Device                  
+  /gps_report_list:
+    post:
+      tags: 
+      - GPS Reports
+      summary: Get GPS Reports
+      description: > 
+                   - Returns an array of GPS Report Objects for a specific device      
+
+                   - By default, the DateTime filters are applied to ReceivedTime rather than CreateTime
+
+                   - ReceivedTime is always reliable, but GPS Report CreateTime can vary in reliability under certain conditions, such as when the tracker goes through an extended period with no GPS signal and no cell signal
+
+                   - If you wish to filter by CreateTime, you may supply the optional Parameter: FilterByReceivedTime: false
+
+                   - This command is available to all account types
+      operationId: GetDeviceGPSReports
+      responses:
+        '200':
+          description: Returns an array of GPS Report Objects for a specific device
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  GPS_Reports:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/GPS_Report'
+                    description: 'Array of GPS Report objects.'
+                  RequestInfo:
+                    $ref: '#/components/schemas/RequestInfo'
+        '400':
+          description: Bad Request
+          content:
+            'application/json':
+              schema:
+                $ref: '#/components/schemas/General_Error'
+        '404':
+          description: 'No gps reports were found that matches the request parameters'
+          content:
+            'application/json':
+              schema:
+                $ref: '#/components/schemas/General_Error'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+              - 'APIKey'
+              - 'DeviceID'
+              - 'DateTime_Start'
+              properties:
+                APIKey:
+                  type: string
+                  example: 'insert_api_key'
+                  description: 'REQUIRED'
+                DeviceID:
+                  type: integer
+                  format: int32
+                  example: '123566'
+                  description: 'REQUIRED: DeviceID of the device'
+                DateTime_Start:
+                  type: string
+                  format: date-time
+                  example: '2021-08-27T23:21:50Z'
+                  description: 'REQUIRED Filter Parameter: Retrieve reports on or after this UTC datetime'
+                DateTime_End:
+                  type: string
+                  format: date-time
+                  example: '2021-08-27T23:21:50Z'
+                  description: >
+                               - OPTIONAL Filter Parameter
+                               
+                               - Retrieve reports on or before this UTC datetime. 
+                               
+                               - If this parameter is not supplied, the system will use DateTime_Start +24hrs as DateTime_End
+                               
+                               - If this parameter is > +24hrs from DateTime_Start, then this parameter will be clamped to +24hrs from DateTime_Start
+                FilterByReceivedTime:
+                  type: boolean
+                  example: true
+                  description: > 
+                               - OPTIONAL
+
+                               - It is strongly recommended to ignore this field or to supply it with a value of true
+
+                               - ReceivedTime is always reliable, but GPS Report CreateTime can vary in reliability under certain conditions, such as when the tracker goes through an extended period with no GPS signal and no cell signal.
+
+                               - If this parameter is supplied with a value of false, then the gps reports will be filtered by CreateTime rather than ReceivedTime
+
+
+### API Command - Get Reports for Single Device                  
+  /gps_reports_purge:
+    post:
+      tags: 
+      - GPS Reports
+      summary: Purge GPS Reports
+      description: > 
+                   - A purge operation will be queued to remove reports through 23:59:59 UTC of the date represented by DateTime_End.
+
+                   - It is normal for queued operations to take up to 1 minute when few reports are involved. 
+
+                   - It is normal for queued operations to take additional minutes if many reports are involved. 
+
+                   - Once a queued purge operation is started, it is normal for purging to occur at a rate of approximately 200 reports per second. 
+
+                   - If the device has serial reports, those will be purged in addition to the GPS reports
+      operationId: PurgeGPSReports
+      responses:
+        '200':
+          description: The purging operation has been successfully queued.
+          content:
+            'application/json':
+              schema:
+                $ref: '#/components/schemas/RequestInfo'
+        '400':
+          description: Bad Request
+          content:
+            'application/json':
+              schema:
+                $ref: '#/components/schemas/General_Error'
+        '404':
+          description: Not Found - unable to locate device
+          content:
+            'application/json':
+              schema:
+                $ref: '#/components/schemas/General_Error'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+              - 'APIKey'
+              - 'DeviceID'
+              - 'DateTime_End'
+              properties:
+                APIKey:
+                  type: string
+                  example: 'insert_api_key'
+                  description: 'REQUIRED'
+                DeviceID:
+                  type: integer
+                  format: int32
+                  example: '123566'
+                  description: 'REQUIRED: DeviceID of the device'
+                DateTime_End:
+                  type: string
+                  format: date-time
+                  example: '2021-08-27T23:21:50Z'
+                  description: 'REQUIRED: A purge operation will be queued to remove reports through 23:59:59 UTC of the date represented by DateTime_End'                
+
+
+### API Command - Assign device to device group
+  /remove_device_from_device_group:
+    post:
+      tags: 
+       - Device Groups
+       - Devices
+      summary: Remove Device from Device Group
+      description: > 
+                   - Remove a device from a Device Group
+                         
+                   - A device may be assigned to a single device group within an organization
+
+                   - For complex organizational hierarhcies, a device may reside in one device group in the Tier 1 org, then one device group in a Tier 2 org, and so on.
+
+                   - Assigning devices to device groups is the mechanism used to allocate devices to sub-organizations. For example, you may assign a dozen devices to a device group, then use the "Assign Device Group to Sub-Organization" API command to assign that device group to a sub-organization.
+
+                   - You may view a list of un-assigned devices by using the "Get Device List" API command with the DeviceGroupID parameter of "-1"
+
+                   - You may view a list of device-group-assigned devices by using the "Get Device List" API command with the appropriate DeviceGroupID parameter.
+
+                   - This command is available only to business accounts. Your account type is visible from your user settings page. You may contact support to transition to a business account (this is helpful if managing many devices). 
+      operationId: RemoveDeviceFromDeviceGroup
+      responses:
+        '200':
+          description: The Device has been removed from the device group
+          content:
+            'application/json':
+              schema:
+                $ref: '#/components/schemas/RequestInfo'
+        '400':
+          description: Bad Request
+          content:
+            'application/json':
+              schema:
+                $ref: '#/components/schemas/General_Error'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+              - 'APIKey'
+              - 'DeviceGroupID'
+              - 'DeviceID'
+              properties:
+                APIKey:
+                  type: string
+                  example: 'insert_api_key'
+                  description: 'REQUIRED'
+                DeviceGroupID:
+                  type: integer
+                  format: int32
+                  example: '3255'
+                  description: 'REQUIRED: The device will be removed from this Device Group'
+                DeviceID:
+                  type: integer
+                  format: int32
+                  example: '35221'
+                  description: 'REQUIRED: This Device will be removed from the Device Group'
+
+### API Command - Set Device Group Name
+  /set_device_group_name:
+    post:
+      tags: 
+       - Device Groups
+      summary: Set Device Group Name
+      description: > 
+                   - Device groups are used for cluster devices for easier management as well as assigning a cluster of devices to a sub-organization
+
+                   - This command is available only to business accounts. Your account type is visible from your user settings page. You may contact support to transition to a business account (this is helpful if managing many devices). 
+      operationId: SetDeviceGroupName
+      responses:
+        '200':
+          description: The Device Group Name has been saved.
+          content:
+            'application/json':
+              schema:
+                $ref: '#/components/schemas/RequestInfo'
+        '400':
+          description: Bad Request
+          content:
+            'application/json':
+              schema:
+                $ref: '#/components/schemas/General_Error'
+        '404':
+          description: Not Found - unable to locate device group
+          content:
+            'application/json':
+              schema:
+                $ref: '#/components/schemas/General_Error'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+              - 'APIKey'
+              - 'DeviceGroupID'
+              - 'DeviceGroupName'
+              properties:
+                APIKey:
+                  type: string
+                  example: 'insert_api_key'
+                  description: 'REQUIRED'
+                DeviceGroupID:
+                  type: integer
+                  format: int32
+                  example: '3255'
+                  description: 'REQUIRED: Update the name of the device group with this DeviceGroupID. You may view a list of Device Groups for an organization by using the Get Device Group List API command.'
+                DeviceGroupName:
+                  type: string
+                  maxLength: 64
+                  example: "Devices for Facility 14"
+                  description: 'REQUIRED: The new name of the device group'
+
+### API Command - UNAssign Device Group to Sub-Organization
+  /unassign_device_group:
+    post:
+      tags: 
+       - Device Groups
+      summary: Unassigns device group from sub-organization
+      description: > 
+                   - A Device group may be assigned to a sub-organization. 
+                   
+                   - This command removes any existing assignment. See the assign_device_group command for additional details. 
+
+                   - This command is available only to business accounts. Your account type is visible from your user settings page. You may contact support to transition to a business account (this is helpful if managing many devices). 
+      operationId: UnassignDeviceGroup
+      responses:
+        '200':
+          description: The Device Group has been unassigned.
+          content:
+            'application/json':
+              schema:
+                $ref: '#/components/schemas/RequestInfo'
+        '400':
+          description: Bad Request
+          content:
+            'application/json':
+              schema:
+                $ref: '#/components/schemas/General_Error'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+              - 'APIKey'
+              - 'DeviceGroupID'
+              properties:
+                APIKey:
+                  type: string
+                  example: 'insert_api_key'
+                  description: 'REQUIRED'
+                DeviceGroupID:
+                  type: integer
+                  format: int32
+                  example: '3255'
+                  description: 'REQUIRED: This device group will be unassigned from its assigned-to sub-organization'
+
+### API Command - Get VMS Fields                  
+  /get_vms_fields:
+    post:
+      tags:
+       - VMS
+      summary: Get VMS Fields
+      description: This API command is used to retrieve the US Coast Guard and/or State Registration Numbers for one or more VMS devices.
+      operationId: GetVMSFields
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                APIKey:
+                  type: string
+                  example: 'insert_api_key'
+                  description: 'REQUIRED: All devices visible to API Key will be returned, subject to possible further filtering by the DeviceID optional input parameter.'
+                DeviceID:
+                  type: string
+                  maxLength: 20
+                  example: 'A-123'
+                  description: 'OPTIONAL: Filter devices by DeviceID. You may use the integer DeviceID or the KeyCode string with or without a hyphen'
+      responses:
+        '200':
+          description: Returns an array of Device Messages containing the DeviceID, KeyCode, US Coast Guard Number and State Registration Number for each device.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  Devices:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        DeviceID:
+                          type: integer
+                          example: 12345
+                          description: DeviceID
+                        KeyCode:
+                          type: string
+                          maxLength: 20
+                          example: 'A-123'
+                          description: Device KeyCode
+                        CoastGuardNumber:
+                          type: string
+                          maxLength: 20
+                          example: '123123'
+                          description: US Coast Guard Number
+                        StateRegNumber:
+                          type: string
+                          maxLength: 20
+                          example: 'AB1234XX'
+                          description: State Registration Number
+                      example:
+                      - DeviceID: 12345
+                        KeyCode: 'A-123'
+                        CoastGuardNumber: '123123'
+                        StateRegNumber: 'AB1234XX'
+                      - DeviceID: 12346
+                        KeyCode: 'A-124'
+                        CoastGuardNumber: '123124'
+                        StateRegNumber: 'AB1234YY'
+                  RequestInfo:
+                    $ref: '#/components/schemas/RequestInfo'
+        '400':
+          description: Bad Request
+          content:
+            'application/json':
+              schema:
+                $ref: '#/components/schemas/General_Error'                      
+
+### API Command - Set VMS Fields
+  /set_vms_fields:
+    post:
+      tags: 
+       - VMS
+      summary: Set VMS Fields
+      description: 
+       - This API command is used to assign or update the US Coast Guard and/or State Registration Numbers for one or more VMS devices.
+       - It is strongly recommended to limit updates to a maximum of 100 devices per command as many internal validations occur per device and timeouts can become an issue
+      operationId: SetVMSFields
+      responses:
+        '200':
+          description: Returns an array of Device Messages indicating the success, partial success, or failure of each device update transaction
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                - DeviceMessages
+                - RequestInfo
+                properties:
+                  DeviceMessages:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        DeviceID:
+                          type: string
+                          maxLength: 20
+                        Message:
+                          type: string
+                          maxLength: 255
+                    description: 'Array of key-value pairs for additional data.'
+                    example:
+                    - DeviceID: "A-123"
+                      Message: "SUCCESS"
+                    - DeviceID: "A-124"
+                      Message: "ERROR: 123456AA was not found in the ACCSP SAFIS Vessels database."  
+                  RequestInfo:
+                    $ref: '#/components/schemas/RequestInfo'       
+        '400':
+          description: Bad Request
+          content:
+            'application/json':
+              schema:
+                $ref: '#/components/schemas/General_Error'                    
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                APIKey:
+                  type: string
+                  example: 'insert_api_key'
+                  description: 'REQUIRED: All devices visible to API Key will be returned, subject to possible further filtering by the other optional input parameters.'
+                Coast_Guard_Updates:
+                  type: array
+                  items:
+                    type: object
+                    properties:
+                      Key:
+                        type: string
+                        maxLength: 20
+                        example: A-123
+                        description: Device KeyCode or DeviceID (in string form)
+                      Value:
+                        type: string
+                        maxLength: 20
+                        example: 123123
+                        description: Desired US Coast Guard Number
+                  description: 'OPTIONAL: Array of DeviceID & US Coast Guard Number pairs where each pair represents a desired update transaction'
+                  example:
+                    - Key: "A-123"
+                      Value: "123123"
+                    - Key: "A-124"
+                      Value: "123124"                  
+                State_Reg_Updates:
+                  type: array
+                  items:
+                    type: object
+                    properties:
+                      Key:
+                        type: string
+                        maxLength: 20
+                        example: A-123
+                        description: Device KeyCode or DeviceID (in string form)
+                      Value:
+                        type: string
+                        maxLength: 20
+                        example: AB1234XX
+                        description: Desired State Registration Number
+                  description: 'OPTIONAL: Array of DeviceID & State Registration Number pairs where each pair represents a desired update transaction'
+                  example:
+                    - Key: "A-125"
+                      Value: "AB1234YY"
+                    - Key: "A-126"
+                      Value: "AB1234ZZ"
+      
+
+####################################################################################################
+### Webhooks
+####################################################################################################
+webhooks:
+  
+### GPS Reports Webhook
+  GPS Reports Webhook:
+    
+  # The request is initiated by the API provider
+    post:
+      tags:
+       - Webhooks
+       - GPS Reports
+      summary: GPS Reports Webhook
+      description: > 
+                   - GPS reports will be pushed to your destination URL as they arrive from GPS trackers
+
+                   - You may subscribe to the webhook from the Org Settings page for business customers and from the user settings page for consumer accounts
+
+                   - Delivery will be considered a success if our system receives an HTTP 200 response. Any other response will be considered an error. 
+
+                   - Typical GPS Report Webhook Order of Events
+                    
+                    1. Your GPS report is received by our systems.
+
+                    2. Your GPS report is processed for any necessary WIFI or Bluetooth geolocation. This is not necessary for most GPS reports.
+
+                    3. Your GPS report is stored in our systems.
+
+                    4. Your GPS report is pushed to your system.
+                    
+                    5. Your GPS report is processed for email and SMS notifications. 
+
+                   - If your destination URL goes offline for a period of time, you may recover missing GPS reports via the "Get GPS Reports" API command
+
+                   - This webhook is available to all account types
+
+                   - Optional: Business users may verify the authenticity of webhook packages by utilizing the x-api-key org setting. See the bottom of the org settings tab. Providing an x-api-key value in org settings will cause every webhook package to contain an x-api-key HTTP header with your provided value.
+      requestBody:
+        description: GPS Reports Webhook
+        servers:
+         - https://YOUR_URL/
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Webhook_Container_GPSReport'
+      responses:
+        "200":
+          description: Return a 200 status to indicate that the data was received successfully
+
+
+### GPS Reports Webhook EXTENDED
+  GPS Reports EXTENDED Webhook:
+    
+  # The request is initiated by the API provider
+    post:
+      tags:
+       - Webhooks
+      summary: GPS Reports (EXTENDED) Webhook
+      description: > 
+                   - Identical to the standard GPS Reports Webhook but with extra fields including input fields, param fields, voltage2, and temp2
+
+                   - This webhook should only be used for trackers with multi-input capability (example: Bilge1 input, Bilge2 input, Tank level monitoring, etc)
+
+                   - This webhook should not be used for trackers with only USB, 12-volt, or solar inputs as the additional fields would never be populated. 
+
+                   - Optional: Business users may verify the authenticity of webhook packages by utilizing the x-api-key org setting. See the bottom of the org settings tab. Providing an x-api-key value in org settings will cause every webhook package to contain an x-api-key HTTP header with your provided value.
+      requestBody:
+        description: GPS Reports (EXTENDED) Webhook
+        servers:
+         - https://YOUR_URL/
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Webhook_Container_GPSReport_Extended'
+      responses:
+        "200":
+          description: Return a 200 status to indicate that the data was received successfully
+
+
+### Serial Reports Webhook
+  Serial Reports Webhook:
+    
+  # The request is initiated by the API provider
+    post:
+      tags:
+       - Webhooks
+      summary: Serial Reports Webhook
+      description: > 
+                   - This webhook is available to all account types, but only applies to CAN-enabled trackers
+
+                   - Serial reports will be pushed to your destination URL as they arrive from Serial-data-enabled GPS trackers
+
+                   - You may subscribe to the webhook from the Org Settings page for business customers
+
+                   - Delivery will be considered a success if our system receives an HTTP 200 response. Any other response will be considered an error. 
+
+                   - Typical Serial Report Webhook Order of Events
+                    
+                    1. Your Serial report is received by our systems.
+
+                    2. Your Serial report is processed for any necessary WIFI or Bluetooth geolocation. This is not necessary for most GPS reports.
+
+                    3. Your Serial report is stored in our systems.
+
+                    4. Your Serial report is pushed to your system.
+
+                   - If your destination URL goes offline for a period of time, you may recover missing Serial reports via the "Get Serial Reports" API command
+
+                   - This webhook is available to all account types
+
+                   - The serial data is in the RawMessage field which will be delivered in a single string
+                   
+                    - The keys in the RawMessage "fluid" and are defined by the device or the device's CAN network
+
+                    - A key may be repeated several times within the RawMessage
+
+                    - The string will always begin with [ and end with ]
+
+                    - The RawMessage string may be tokenized in the following fashion: Trim [ and ], then split the string by comma and process each remaining key value pair.
+
+                    - Sample contents of the RawMessage field: [{"can":"1"},{"e0es":"794"},{"e1es":"0"},{"e0fr":"0.0"},{"e0op":"13.7"},{"e0ct":"81.5"},{"e0vo":"27.0"},{"e0eh":"14564.6"}]
+
+                    - Optional: Business users may verify the authenticity of webhook packages by utilizing the x-api-key org setting. See the bottom of the org settings tab. Providing an x-api-key value in org settings will cause every webhook package to contain an x-api-key HTTP header with your provided value.
+
+      requestBody:
+        description: Serial Reports Webhook
+        servers:
+         - https://YOUR_URL/
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Serial_Report'
+      responses:
+        "200":
+          description: Return a 200 status to indicate that the data was received successfully
+
+
+### Calamp Binary Reports Webhook
+  Binary Reports Webhook:
+    
+  # The request is initiated by the API provider
+    post:
+      tags:
+       - Webhooks
+      summary: Binary Reports Webhook
+      description: > 
+                   - This webhook is available to all account types, but only applies to CAN-enabled trackers
+
+                   - Binary reports will be pushed to your destination URL as they arrive from Serial-data-enabled GPS trackers
+
+                   - You may subscribe to the webhook from the Org Settings page for business customers
+
+                   - Delivery will be considered a success if our system receives an HTTP 200 response. Any other response will be considered an error. 
+
+                   - Typical Binary Report Webhook Order of Events
+                    
+                    1. Your Binary report is received by our systems.
+
+                    2. Your Binary report is pushed to your system.
+
+                   - If your destination URL goes offline for a period of time, the send will be retried a few times with at least 30 seconds between tries
+
+                   - This webhook is available to all account types
+
+                   - The binary data is in the BinaryMessage field in a HEX representation
+                   
+                    - Optional: Business users may verify the authenticity of webhook packages by utilizing the x-api-key org setting. See the bottom of the org settings tab. Providing an x-api-key value in org settings will cause every webhook package to contain an x-api-key HTTP header with your provided value.
+
+      requestBody:
+        description: Binary Reports Webhook
+        servers:
+         - https://YOUR_URL/
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Binary_Report'
+      responses:
+        "200":
+          description: Return a 200 status to indicate that the data was received successfully
+
+
+####################################################################################################
+### Object Definitions     
+####################################################################################################
+
+components:
+  schemas:
+    General_Error:
+      type: object
+      properties:
+        Error_Code:
+          type: integer
+          format: int32
+          example: 8000
+        Error_Message:
+          type: string
+          example: 'sample error message'
+    Message:
+      type: object
+      properties:
+        Message:
+          type: string
+          example: 'Success'
+          description: 'A simple message. A common value is "Success"'
+    Binary_Report:
+      type: object
+      description: 'CAN-enabled GPS trackers issue can issue binary data from attached CAN networks.'
+      properties:
+        ReportID:
+          type: string
+          maxLength: 20
+          example: '3926932'
+          description: 'A unique identifier per Binary or Serial Report. Max Length: 20 alphanumeric characters.'
+        CreateTime:
+          type: string
+          format: date-time
+          example: '2021-08-27T23:20:50Z'
+          description: 'The datetime when the data was generated (device-side) Format: 1985-04-12T23:20:50Z (Internet Date Standard ISO 8601 RFC 3339)'
+        DeviceID:
+          type: integer
+          format: int32
+          example: 49841
+          description: 'Each device has a unique DeviceID. This is the preferred identifier for devices. It offers the best performance.'        
+        BinaryMessage:
+          type: string
+          example: '492074686F7567687420796F7520776173206120746F6164'
+          description: >           
+                       - Hex representation of a byte array
+    Device:
+      type: object
+      description: 'Device information including latest GPS coordinates, report time, and voltage level'
+      required:
+        - DeviceID
+        - Generation
+        - LastReport_CreateTime
+        - LastReport_PositionSource
+        - LastReport_ReceivedTime
+        - ProductID
+      properties:
+        DeviceID:
+          type: integer
+          format: int32
+          example: 49841
+          description: 'Each device has a unique DeviceID. This is the preferred identifier for devices. It offers the best performance. ' 
+        DeviceGroupID:
+          type: integer
+          format: int32
+          example: 3203
+          description: > 
+                       - NOTE: This field is only populated via the device_list API command. This field will be null via the "get single device" API command.
+        DeviceGroupName:
+          type: string
+          maxLength: 255
+          example: Facility 14 Devices
+          description: > 
+                       - NOTE: This field is only populated via the device_list API command. This field will be null via the "get single device" API command.
+        Firmware:
+          type: string
+          maxLength: 50
+          example: '0.6.1_Graviton'
+          description: 'Firmware may be pushed to devices over-the-air'
+        Generation:
+          type: integer
+          format: int32
+          example: 3
+          description: 'A generation may include multiple different product types. When a hardware revision is deployed, a new generation number is established. New hardware revisions often include new capabilities and increased efficiency'
+        ImageURL:
+          type: string
+          maxLength: 500
+          example: 'https://vtx-images.s3.amazonaws.com/vqam/custom/device-images/10019-50d7e7db-efd9-4afe-8ae5-90903418d1f6.jpg'
+          description: 'A device''s image may be uploaded, modified, or removed via the main UI. Additionally, it is on the API roadmap to provide an API command for device image management.'
+        IMEI:
+          type: string
+          maxLength: 50
+          example: '013108001988811'
+          description: 'Each device has a unique IMEI. If indexing devices in an external system, it is recommended to use DeviceID (unique int) as a primary key rather than IMEI'
+        KeyCode:
+          type: string
+          maxLength: 10
+          example: 'VQA-493'
+          description: 'Each device has a unique KeyCode. Typical formats include: AA-123, AAA-123, AAA-1234, but may include any 10 alphanumeric characters. These are intended to be human-friendly identifiers.'
+        Label:
+          type: string
+          maxLength: 64
+          example: 'Truck #14'
+          description: The customer's customizable text label of the device (editable)'
+        LastReport_CreateTime:
+          type: string
+          format: date-time
+          example: '2021-08-27T23:20:50Z'
+          description: 'The datetime when the position data was generated (device-side) Format: 1985-04-12T23:20:50Z (Internet Date Standard ISO 8601 RFC 3339)'
+        LastReport_Latitude:
+          type: number
+          format: double
+          example: 26.954570
+          description: 'A GPS report''s latitude and longitude always come from the same source. The potential sources include: GPS signal, WIFI geolocation, Bluetooth Geolocation, Cell Tower Geolocation (in that order of priority). For example, WIFI geolocation will only be used if there is no GPS signal available. See: LastReport_PositionSource for the geolocation method that was utilized. Often >99% of reports utilize GPS signals, but WIFI or methods may be used when a GPS signal is degraded (example: parking garage)'
+        LastReport_PositionSource:
+          type: string
+          example: gps
+          description: 'Potential values: gps, wifi, bluetooth, cell, none. This represents the geolocation source of information used to generate the lat/long coordinates. Options are: GPS signal, WIFI geolocation, Bluetooth Geolocation, and Cell Tower Geolocation (in that order of priority). For example, WIFI geolocation will only be used if there is no GPS signal available. Often >99% of reports utilize GPS signals, but WIFI or methods may be used when a GPS signal is degraded (example: parking garage)'
+          enum:
+          - gps
+          - wifi
+          - bluetooth
+          - cell
+          - none
+        LastReport_Longitude:
+          type: number
+          format: double
+          example: -81.894680
+          description: 'A GPS report''s latitude and longitude always come from the same source. The potential sources include: GPS signal, WIFI geolocation, Bluetooth Geolocation, Cell Tower Geolocation (in that order of priority). For example, WIFI geolocation will only be used if there is no GPS signal available. See: LastReport_PositionSource for the geolocation method that was utilized. Often >99% of reports utilize GPS signals, but WIFI or methods may be used when a GPS signal is degraded (example: parking garage)'
+        LastReport_ReceivedTime:
+          type: string
+          format: date-time
+          example: '2021-08-27T23:21:50Z'
+          description: 'The datetime when the position data was received (server-side) Format: 1985-04-12T23:20:50Z (Internet Date Standard ISO 8601 RFC 3339)'
+        LastReport_Voltage:
+          type: number
+          format: float
+          example: 4.15
+          description: 'Latest voltage in millivolts (example: 3500 which translates to 3.5 volts)'
+        LastReport_VoltagePercent:
+          type: integer
+          format: int32
+          example: 98
+          description: 'The battery level percentage. Example: 80 represents a battery that has 80% of its charge remaining'
+        Note:
+          type: string
+          maxLength: 500
+          example: 'Truck #14'
+          description: 'Customer-customizable field holding up to 500 chars (<100 is recommended)'
+        ProductID:
+          type: integer
+          format: int32
+          example: 55
+          description: 'Each product type has a ProductID. Example Products: USB Model, Solar Model, 12volt Model, etc. ProductID may be used in filtering within the device-list API command'
+        ProductName:
+          type: string
+          maxLength: 255
+          example: 'LTE Gen3 USB'
+          description: 'Every device has a product type. Example Products: USB Model, Solar Model, 12volt Model, etc.'
+        ReportingFrequencyID_Current:
+          type: integer
+          format: int32
+          example: 217
+          description: 'The ID of the current reporting frequency'
+        ReportingFrequency_Current:
+          type: string
+          maxLength: 255
+          example: '1d|10m Premium'
+          description: 'The name of the current reporting frequency'
+        ReportingFrequencyID_Pending:
+          type: integer
+          format: int32
+          example: 218
+          description: 'If this is not null, then this represents the ID of the reporting frequency that has been queued up for delivery to the device (next time it checks in). It is possible to queue reporting frequency changes via the API.'
+        ReportingFrequency_Pending:
+          type: string
+          maxLength: 255
+          example: '1d|1m Elite'
+          description: 'If this is not null, then this represents the name of the reporting frequency that has been queued up for delivery to the device (next time it checks in). It is possible to queue reporting frequency changes via the API.'
+        SerialDictionary:
+          type: string
+          example: '{"can":{"Time":"2017-08-29T20:34:04","Val":"1"},"e0es":{"Time":"2017-08-29T20:34:04","Val":"644"},"e1es":{"Time":"2017-08-29T20:34:04","Val":"648"},"e0fp":{"Time":"2017-03-03T18:47:16.603","Val":"174.0"},"e1fp":{"Time":"2017-03-03T18:47:16.603","Val":"87.0"},"e0fr":{"Time":"2017-08-29T20:34:04","Val":"3.1"},"e0ot":{"Time":"2017-03-03T18:47:16.603","Val":"6207.0"},"e1ot":{"Time":"2017-03-03T18:47:16.603","Val":"2873.6"},"e0op":{"Time":"2017-08-29T20:34:04","Val":"39.5"},"e1op":{"Time":"2017-08-29T20:34:04","Val":"42.4"},"e0ct":{"Time":"2017-08-29T20:34:04","Val":"119.9"},"e1ct":{"Time":"2017-08-29T20:34:04","Val":"119.9"},"e0bp":{"Time":"2017-08-29T20:34:04","Val":"5.5"},"e1bp":{"Time":"2017-08-29T20:34:04","Val":"5.5"},"e0vo":{"Time":"2017-08-29T20:34:04","Val":"14.4"},"e1vo":{"Time":"2017-08-29T20:34:04","Val":"14.3"},"e0fi":{"Time":"2017-08-29T20:34:04","Val":"0.6"},"e1fi":{"Time":"2017-08-29T20:34:04","Val":"0.6"},"e0eh":{"Time":"2017-08-29T20:34:04","Val":"869.3"},"e1eh":{"Time":"2017-08-29T20:34:04","Val":"868.0"},"e0wp":{"Time":"2017-03-03T18:47:16.603","Val":"17.4"},"e1wp":{"Time":"2017-03-03T18:47:16.603","Val":"8.7"},"e0ge":{"Time":"2017-08-29T20:34:04","Val":"U"},"spd":{"Time":"2017-06-15T16:59:28","Val":"96.2"},"f0fu":{"Time":"2017-03-01T18:45:45","Val":"10"},"f1fu":{"Time":"2017-03-01T18:45:45","Val":"10"},"f0ol":{"Time":"2017-03-01T18:45:45","Val":"10"},"e0el":{"Time":"2017-08-29T20:34:04","Val":"NODATA"},"e0tp":{"Time":"2017-03-01T18:45:45","Val":"0.0"},"e0tt":{"Time":"2017-03-01T18:45:45","Val":"32.0"},"e0th":{"Time":"2017-08-29T20:34:04","Val":"255"},"e0et":{"Time":"2017-03-01T18:45:45","Val":"-23.8"},"e1el":{"Time":"2017-08-29T20:34:04","Val":"NODATA"},"e1th":{"Time":"2017-08-29T20:34:04","Val":"255"},"e1ge":{"Time":"2017-08-29T20:34:04","Val":"U"}}'
+          description: >
+                       - This field will be null for most devices.
+
+                       - This field only contains a value for devices that capture serial data via a CAN system.
+
+                       - When populated, this field contains a fully-escaped JSON string containing a dictionary of format: Dictionary<string,{Time: TimeStr, Val: ValStr}>.
+                        
+                       - In .NET, this deserializes to a Dictionary<string, DeviceSerialCacheRecord> where DeviceSerialCacheRecord is a class with two properties: DateTime Time & string Val
+
+                       - In JS or TS, this deserializes to an object where every top-level property is a key, see the example for the exact format
+    GPS_Report:
+      type: object
+      description: 'A timestamped position report for a GPS tracker'
+      properties:
+        ReportID:
+          type: string
+          maxLength: 20
+          example: 'Xvfq6nsB8mdQyQS2s92Z'
+          description: 'A unique identifier per GPS Report. Max Length: 20 characters.'
+        Accuracy:
+          type: integer
+          format: int32
+          example: 20
+          description: 'The accuracy in meters of the Latitude and Longitude. Accuracy is not available for PositionSource: GPS (see HDOP for GPS accuracy) or PositionSource: none.'
+        CreateTime:
+          type: string
+          format: date-time
+          example: '2021-08-27T23:20:50Z'
+          description: 'The datetime when the position data was generated (device-side) Format: 1985-04-12T23:20:50Z (Internet Date Standard ISO 8601 RFC 3339)'
+        DeviceID:
+          type: integer
+          format: int32
+          example: 49841
+          description: 'Each device has a unique DeviceID. This is the preferred identifier for devices. It offers the best performance.'
+        DeviceState:
+          type: string
+          maxLength: 100
+          example: NotMoving_NotCharging
+          description: >
+                       - Common values include:
+
+                        - NotMoving_Charging
+
+                        - NotMoving_NotCharging
+
+                        - Moving_Charging
+
+                        - Moving_NotCharging
+
+                       - It is possible for other string values to appear in this field. 
+
+                       - It is possible for this field to be null or empty.
+
+                       - The above common values account for 99% of GPS Reports
+        HDOP:
+          type: number
+          format: float
+          example: 4.15
+          description: 'The GPS signal quality at the time of GPS Report creation. Lower is better: 0.5 to 2.0 is GOOD, 2.1 to 5.0 is OK, 5.1+ is poor. HDOP is only available for GPS Reports with the following PositionSource: gps'
+        Heading:
+          type: integer
+          format: int32
+          example: 107
+          description: 'The instantaneous GPS heading in degrees at the time of GPS Report creation, according to the GPS chip. Heading is only available for GPS Reports with the following PositionSource: gps.'
+        Latitude:
+          type: number
+          format: double
+          example: 26.954570
+          description: 'A GPS report''s latitude and longitude always come from the same source. The potential sources include: GPS signal, WIFI geolocation, Bluetooth Geolocation, Cell Tower Geolocation (in that order of priority). For example, WIFI geolocation will only be used if there is no GPS signal available. See: LastReport_PositionSource for the geolocation method that was utilized. Often >99% of reports utilize GPS signals, but WIFI or methods may be used when a GPS signal is degraded (example: parking garage)'
+        Longitude:
+          type: number
+          format: double
+          example: -81.894680
+          description: 'A GPS report''s latitude and longitude always come from the same source. The potential sources include: GPS signal, WIFI geolocation, Bluetooth Geolocation, Cell Tower Geolocation (in that order of priority). For example, WIFI geolocation will only be used if there is no GPS signal available. See: LastReport_PositionSource for the geolocation method that was utilized. Often >99% of reports utilize GPS signals, but WIFI or methods may be used when a GPS signal is degraded (example: parking garage)'
+        PositionSource:
+          type: string
+          example: gps
+          description: 'Potential values: gps, wifi, bluetooth, cell, none. This represents the geolocation source of information used to generate the lat/long coordinates. Options are: GPS signal, WIFI geolocation, Bluetooth Geolocation, and Cell Tower Geolocation (in that order of priority). For example, WIFI geolocation will only be used if there is no GPS signal available. Often >99% of reports utilize GPS signals, but WIFI or methods may be used when a GPS signal is degraded (example: parking garage)'
+          enum:
+          - gps
+          - wifi
+          - bluetooth
+          - cell
+          - none
+          - unknown
+        ReceivedTime:
+          type: string
+          format: date-time
+          example: '2021-08-27T23:21:50Z'
+          description: 'The datetime when the position data was received (server-side) Format: 1985-04-12T23:20:50Z (Internet Date Standard ISO 8601 RFC 3339)'
+        ReportingFrequency:
+          type: string
+          maxLength: 255
+          example: '1d|10m Premium'
+          description: 'The name of the reporting frequency active on the device at the time of GPS Report creation. ReportingFrequency is available for devices with Generation of 3 or higher.'
+        ReportReason:
+          type: string
+          maxLength: 50
+          example: 'MovementChange'
+          description: >
+                       - Common values include: 
+                       
+                        - PeriodicReport  (a scheduled gps report)
+
+                        - ChargeStateChange
+
+                        - MovementChange
+
+                        - PowerUp
+
+                        - TemperatureOutOfBounds
+
+                        - ConfigAcknowledgement
+
+                       - It is possible for other string values to appear in this field. 
+
+                       - It is possible for this field to be null or empty.
+
+                       - The above common values account for 99% of GPS Reports. 
+        RSSI:
+          type: integer
+          format: int32
+          example: -75
+          description: 'Cell signal strength. -60 to -80 is good, -81 to -86 is moderate, -87 to -91 is poor, -92 or lowe is very poor. RSSI is not always available. RSSI is most likely available if the GPS Report has a small difference between CreateTime and ReceivedTime.'
+        Speed:
+          type: integer
+          format: int32
+          example: 107
+          description: 'The instantaneous speed in kilometers per hour at the time of GPS Report creation, according to the GPS chip. Speed is only available for GPS Reports with the following PositionSource: gps.'
+        Temperature:
+          type: integer
+          format: int32
+          example: 22
+          description: 'Internal temperature (in Celsius) at the time of GPS Report creation. Note: A device that is actively charging may temporarily have a higher internal temperature.'
+        Voltage:
+          type: number
+          format: float
+          example: 4.15
+          description: 'voltage in millivolts (example: 3500 which translates to 3.5 volts)'
+        VoltagePercent:
+          type: integer
+          format: int32
+          example: 98
+          description: 'The battery level percentage. Example: 80 represents a battery that has 80% of its charge remaining'  
+    GPS_Report_Extended:
+      type: object
+      description: 'A timestamped position report for a GPS tracker'
+      properties:
+        ReportID:
+          type: string
+          maxLength: 20
+          example: 'Xvfq6nsB8mdQyQS2s92Z'
+          description: 'A unique identifier per GPS Report. Max Length: 20 characters.'
+        Accuracy:
+          type: integer
+          format: int32
+          example: 20
+          description: 'The accuracy in meters of the Latitude and Longitude. Accuracy is not available for PositionSource: GPS (see HDOP for GPS accuracy) or PositionSource: none.'
+        CreateTime:
+          type: string
+          format: date-time
+          example: '2021-08-27T23:20:50Z'
+          description: 'The datetime when the position data was generated (device-side) Format: 1985-04-12T23:20:50Z (Internet Date Standard ISO 8601 RFC 3339)'
+        DeviceID:
+          type: integer
+          format: int32
+          example: 49841
+          description: 'Each device has a unique DeviceID. This is the preferred identifier for devices. It offers the best performance.'
+        DeviceState:
+          type: string
+          maxLength: 100
+          example: NotMoving_NotCharging
+          description: >
+                       - Common values include:
+
+                        - NotMoving_Charging
+
+                        - NotMoving_NotCharging
+
+                        - Moving_Charging
+
+                        - Moving_NotCharging
+
+                       - It is possible for other string values to appear in this field. 
+
+                       - It is possible for this field to be null or empty.
+
+                       - The above common values account for 99% of GPS Reports
+        HDOP:
+          type: number
+          format: float
+          example: 4.15
+          description: 'The GPS signal quality at the time of GPS Report creation. Lower is better: 0.5 to 2.0 is GOOD, 2.1 to 5.0 is OK, 5.1+ is poor. HDOP is only available for GPS Reports with the following PositionSource: gps'
+        Heading:
+          type: integer
+          format: int32
+          example: 107
+          description: 'The instantaneous GPS heading in degrees at the time of GPS Report creation, according to the GPS chip. Heading is only available for GPS Reports with the following PositionSource: gps.'
+        Input0:
+          type: boolean
+          example: false
+          description: 'This field only applies to multi-input trackers. The meaning of the value of this field depends upon the configuration of the device and how the device is wired to the asset.'
+        Input1:
+          type: boolean
+          example: false
+          description: 'This field only applies to multi-input trackers. The meaning of the value of this field depends upon the configuration of the device and how the device is wired to the asset.'
+        Input2:
+          type: boolean
+          example: false
+          description: 'This field only applies to multi-input trackers. The meaning of the value of this field depends upon the configuration of the device and how the device is wired to the asset.'
+        Input3:
+          type: boolean
+          example: false
+          description: 'This field only applies to multi-input trackers. The meaning of the value of this field depends upon the configuration of the device and how the device is wired to the asset.'
+        Input4:
+          type: boolean
+          example: false
+          description: 'This field only applies to multi-input trackers. The meaning of the value of this field depends upon the configuration of the device and how the device is wired to the asset.'
+        Latitude:
+          type: number
+          format: double
+          example: 26.954570
+          description: 'A GPS report''s latitude and longitude always come from the same source. The potential sources include: GPS signal, WIFI geolocation, Bluetooth Geolocation, Cell Tower Geolocation (in that order of priority). For example, WIFI geolocation will only be used if there is no GPS signal available. See: LastReport_PositionSource for the geolocation method that was utilized. Often >99% of reports utilize GPS signals, but WIFI or methods may be used when a GPS signal is degraded (example: parking garage)'
+        Longitude:
+          type: number
+          format: double
+          example: -81.894680
+          description: 'A GPS report''s latitude and longitude always come from the same source. The potential sources include: GPS signal, WIFI geolocation, Bluetooth Geolocation, Cell Tower Geolocation (in that order of priority). For example, WIFI geolocation will only be used if there is no GPS signal available. See: LastReport_PositionSource for the geolocation method that was utilized. Often >99% of reports utilize GPS signals, but WIFI or methods may be used when a GPS signal is degraded (example: parking garage)'
+        Param0:
+          type: integer
+          format: int32
+          example: 12
+          description: 'This field only applies to multi-input trackers. The meaning of the value of this field depends upon the configuration of the device and how the device is wired to the asset.'
+        Param1:
+          type: integer
+          format: int32
+          example: 12
+          description: 'This field only applies to multi-input trackers. The meaning of the value of this field depends upon the configuration of the device and how the device is wired to the asset.'
+        Param2:
+          type: integer
+          format: int32
+          example: 12
+          description: 'This field only applies to multi-input trackers. The meaning of the value of this field depends upon the configuration of the device and how the device is wired to the asset.'
+        Param3:
+          type: integer
+          format: int32
+          example: 12
+          description: 'This field only applies to multi-input trackers. The meaning of the value of this field depends upon the configuration of the device and how the device is wired to the asset.'
+        Param4:
+          type: integer
+          format: int32
+          example: 12
+          description: 'This field only applies to multi-input trackers. The meaning of the value of this field depends upon the configuration of the device and how the device is wired to the asset.'
+        Param5:
+          type: integer
+          format: int32
+          example: 12
+          description: 'This field only applies to multi-input trackers. The meaning of the value of this field depends upon the configuration of the device and how the device is wired to the asset.'
+        Param6:
+          type: integer
+          format: int32
+          example: 12
+          description: 'This field only applies to multi-input trackers. The meaning of the value of this field depends upon the configuration of the device and how the device is wired to the asset.'
+        Param7:
+          type: integer
+          format: int32
+          example: 12
+          description: 'This field only applies to multi-input trackers. The meaning of the value of this field depends upon the configuration of the device and how the device is wired to the asset.'
+        Param8:
+          type: integer
+          format: int32
+          example: 12
+          description: 'This field only applies to multi-input trackers. The meaning of the value of this field depends upon the configuration of the device and how the device is wired to the asset.'
+        Param9:
+          type: integer
+          format: int32
+          example: 12
+          description: 'This field only applies to multi-input trackers. The meaning of the value of this field depends upon the configuration of the device and how the device is wired to the asset.'
+        Param10:
+          type: integer
+          format: int32
+          example: 12
+          description: 'This field only applies to multi-input trackers. The meaning of the value of this field depends upon the configuration of the device and how the device is wired to the asset.'
+        Param11:
+          type: integer
+          format: int32
+          example: 12
+          description: 'This field only applies to multi-input trackers. The meaning of the value of this field depends upon the configuration of the device and how the device is wired to the asset.'
+        Param12:
+          type: integer
+          format: int32
+          example: 12
+          description: 'This field only applies to multi-input trackers. The meaning of the value of this field depends upon the configuration of the device and how the device is wired to the asset.'
+        Param13:
+          type: integer
+          format: int32
+          example: 12
+          description: 'This field only applies to multi-input trackers. The meaning of the value of this field depends upon the configuration of the device and how the device is wired to the asset.'
+        Param14:
+          type: integer
+          format: int32
+          example: 12
+          description: 'This field only applies to multi-input trackers. The meaning of the value of this field depends upon the configuration of the device and how the device is wired to the asset.'
+        Param15:
+          type: integer
+          format: int32
+          example: 12
+          description: 'This field only applies to multi-input trackers. The meaning of the value of this field depends upon the configuration of the device and how the device is wired to the asset.'
+        Param16:
+          type: integer
+          format: int32
+          example: 12
+          description: 'This field only applies to multi-input trackers. The meaning of the value of this field depends upon the configuration of the device and how the device is wired to the asset.'
+        Param17:
+          type: integer
+          format: int32
+          example: 12
+          description: 'This field only applies to multi-input trackers. The meaning of the value of this field depends upon the configuration of the device and how the device is wired to the asset.'
+        Param18:
+          type: integer
+          format: int32
+          example: 12
+          description: 'This field only applies to multi-input trackers. The meaning of the value of this field depends upon the configuration of the device and how the device is wired to the asset.'
+        Param19:
+          type: integer
+          format: int32
+          example: 12
+          description: 'This field only applies to multi-input trackers. The meaning of the value of this field depends upon the configuration of the device and how the device is wired to the asset.'
+        Param20:
+          type: integer
+          format: int32
+          example: 12
+          description: 'This field only applies to multi-input trackers. The meaning of the value of this field depends upon the configuration of the device and how the device is wired to the asset.'
+        Param21:
+          type: integer
+          format: int32
+          example: 12
+          description: 'This field only applies to multi-input trackers. The meaning of the value of this field depends upon the configuration of the device and how the device is wired to the asset.'
+        Param22:
+          type: integer
+          format: int32
+          example: 12
+          description: 'This field only applies to multi-input trackers. The meaning of the value of this field depends upon the configuration of the device and how the device is wired to the asset.'
+        Param23:
+          type: integer
+          format: int32
+          example: 12
+          description: 'This field only applies to multi-input trackers. The meaning of the value of this field depends upon the configuration of the device and how the device is wired to the asset.'
+        Param24:
+          type: integer
+          format: int32
+          example: 12
+          description: 'This field only applies to multi-input trackers. The meaning of the value of this field depends upon the configuration of the device and how the device is wired to the asset.'
+        PositionSource:
+          type: string
+          example: gps
+          description: 'Potential values: gps, wifi, bluetooth, cell, none. This represents the geolocation source of information used to generate the lat/long coordinates. Options are: GPS signal, WIFI geolocation, Bluetooth Geolocation, and Cell Tower Geolocation (in that order of priority). For example, WIFI geolocation will only be used if there is no GPS signal available. Often >99% of reports utilize GPS signals, but WIFI or methods may be used when a GPS signal is degraded (example: parking garage)'
+          enum:
+          - gps
+          - wifi
+          - bluetooth
+          - cell
+          - none
+          - unknown
+        ReceivedTime:
+          type: string
+          format: date-time
+          example: '2021-08-27T23:21:50Z'
+          description: 'The datetime when the position data was received (server-side) Format: 1985-04-12T23:20:50Z (Internet Date Standard ISO 8601 RFC 3339)'
+        ReportingFrequency:
+          type: string
+          maxLength: 255
+          example: '1d|10m Premium'
+          description: 'The name of the reporting frequency active on the device at the time of GPS Report creation. ReportingFrequency is available for devices with Generation of 3 or higher.'
+        ReportReason:
+          type: string
+          maxLength: 50
+          example: 'MovementChange'
+          description: >
+                       - Common values include: 
+                       
+                        - PeriodicReport  (a scheduled gps report)
+
+                        - ChargeStateChange
+
+                        - MovementChange
+
+                        - PowerUp
+
+                        - TemperatureOutOfBounds
+
+                        - ConfigAcknowledgement
+
+                       - It is possible for other string values to appear in this field. 
+
+                       - It is possible for this field to be null or empty.
+
+                       - The above common values account for 99% of GPS Reports. 
+        RSSI:
+          type: integer
+          format: int32
+          example: -75
+          description: 'Cell signal strength. -60 to -80 is good, -81 to -86 is moderate, -87 to -91 is poor, -92 or lowe is very poor. RSSI is not always available. RSSI is most likely available if the GPS Report has a small difference between CreateTime and ReceivedTime.'
+        Speed:
+          type: integer
+          format: int32
+          example: 107
+          description: 'The instantaneous speed in kilometers per hour at the time of GPS Report creation, according to the GPS chip. Speed is only available for GPS Reports with the following PositionSource: gps.'
+        Temperature:
+          type: integer
+          format: int32
+          example: 22
+          description: 'Internal temperature (in Celsius) at the time of GPS Report creation. Note: A device that is actively charging may temporarily have a higher internal temperature.'
+        Temperature2:
+          type: integer
+          format: int32
+          example: 22
+          description: 'If a tracker has a secondary temperature sensor, this field will be populated. Most trackers will have a null value for this field.'
+        Voltage:
+          type: number
+          format: float
+          example: 4.15
+          description: 'Latest voltage in millivolts (example: 3500 which translates to 3.5 volts)'
+        Voltage2:
+          type: number
+          format: float
+          example: 4.15
+          description: 'Latest voltage in millivolts (example: 3500 which translates to 3.5 volts). Most trackers will have a null value for this field.'
+        VoltagePercent:
+          type: integer
+          format: int32
+          example: 98
+          description: 'The battery level percentage. Example: 80 represents a battery that has 80% of its charge remaining'  
+    Device_Group:
+      type: object
+      description: 'Business accounts may cluster devices into device groups for organization as well as for assignment to sub-organizations'
+      properties:
+        DeviceGroupID:
+          type: integer
+          format: int32
+          example: 2315
+          description: 'Unique identifier for a device group'
+        AssignedToOrg_ID:
+          type: integer
+          format: int32
+          example: 417
+          description: 'OPTIONAL: This value is only populated if this device group is assigned to a sub-organization'
+        AssignedToOrg_Name:
+          type: string
+          maxLength: 255
+          example: 'Sample Child Organization'
+          description: 'OPTIONAL: This value is only populated if this device group is assigned to a sub-organization'
+        Count_Devices:
+          type: integer
+          format: int32
+          example: 122
+          description: 'The number of devices assigned to this device group'
+        Name:
+          type: string
+          maxLength: 255
+          example: 'Northeast_Region_Trailers'
+          description: 'Device Group Name'
+        OwnerOrg_ID:
+          type: integer
+          format: int32
+          example: 416
+          description: 'The OrgID of the organization which owns this device group'
+        OwnerOrg_Name:
+          type: string
+          maxLength: 255
+          example: 'Sample Parent Organization'
+          description: 'The name of the organization which owns this device group'
+    Org:
+      type: object
+      description: 'Business accounts may cluster GPS trackers into sub-organizations for ease of management.'
+      properties:
+        OrgID:
+          type: integer
+          format: int32
+          example: 416
+          description: 'Unique identifier for an Organization'
+        Count_Devices:
+          type: integer
+          format: int32
+          example: 256
+          description: 'The number of devices assigned to this organization'
+        Count_DeviceGroups:
+          type: integer
+          format: int32
+          example: 256
+          description: 'The number of device groups owned by this organization'
+        Count_SubOrgs:
+          type: integer
+          format: int32
+          example: 4
+          description: 'The number of sub-organizations owned by this organization'
+        Count_Users:
+          type: integer
+          format: int32
+          example: 12
+          description: 'The number of user accounts owned by this organization'
+        Name:
+          type: string
+          maxLength: 255
+          example: 'Sample Organization'
+          description: 'Organization name'
+        ParentOrgID:
+          type: integer
+          format: int32
+          example: 417
+          description: 'OPTIONAL: If this organization is NOT a top-level organization, then this value is the OrgID of the parent organization.'
+    Serial_Report:
+      type: object
+      description: 'CAN-enabled GPS trackers issue serial data from attached CAN networks.'
+      properties:
+        ReportID:
+          type: string
+          maxLength: 20
+          example: 'Xvfq6nsB8mdQyQS2s92Z'
+          description: 'A unique identifier per Serial Report. Max Length: 20 alphanumeric characters.'
+        CreateTime:
+          type: string
+          format: date-time
+          example: '2021-08-27T23:20:50Z'
+          description: 'The datetime when the data was generated (device-side) Format: 1985-04-12T23:20:50Z (Internet Date Standard ISO 8601 RFC 3339)'
+        DeviceID:
+          type: integer
+          format: int32
+          example: 49841
+          description: 'Each device has a unique DeviceID. This is the preferred identifier for devices. It offers the best performance.'        
+        RawMessage:
+          type: string
+          example: '[{"can":"2"},{"e0es":"794"},{"e1es":"0"},{"e0fr":"0.0"},{"e0op":"13.7"},{"e0ct":"81.5"},{"e0vo":"27.0"},{"e0eh":"14564.6"}]'
+          description: >           
+                       - The keys are "fluid" and are defined by the device or the device's CAN network
+
+                       - A key may be repeated several times within the array
+
+                       - The string will always begin with [ and end with ]
+
+                       - The RawMessage string may be tokenized in the following fashion: Trim [ and ], then split the string by comma and process each remaining key value pair
+
+                       - Sample contents: [{"can":"1"},{"e0es":"794"},{"e1es":"0"},{"e0fr":"0.0"},{"e0op":"13.7"},{"e0ct":"81.5"},{"e0vo":"27.0"},{"e0eh":"14564.6"}]
+    RequestInfo:
+      type: object
+      description: 'Information about the API request, including API version and current rate limit stats'
+      properties:
+        API_Version:
+          type: string
+          example: '3.01'
+          description: 'The API version of this request and response. The API version may be selected in org settings for business accounts or user settings for consumer accounts.'
+        Message:
+          type: string
+          maxLength: 512
+          example: 'sample message'
+          description: >
+                       - OPTIONAL
+        RateLimit_10sec:
+          type: string
+          maxLength: 50
+          example: '3/60'
+          description: 'Current usage stats of the 10-second rate limit, where the first number is the consumption and the second number is the limit. You may request rate limit adjustments by contacting support and describing your use case.'
+        RateLimit_1min:
+          type: string
+          maxLength: 50
+          example: '8/180'
+          description: 'Current usage stats of the 1-minute rate limit, where the first number is the consumption and the second number is the limit. You may request rate limit adjustments by contacting support and describing your use case.'
+        RateLimit_1hour:
+          type: string
+          maxLength: 50
+          example: '8/390'
+          description: 'Current usage stats of the 1-hour rate limit, where the first number is the consumption and the second number is the limit. You may request rate limit adjustments by contacting support and describing your use case.'      
+    Reporting_Frequency:
+      type: object
+      description: 'A reporting frequency is a GPS tracker configuration. A GPS tracker may be made to report rapidly or slowly depending upon use case and desired battery consumption'
+      properties:
+        ReportingFrequencyID:
+          type: integer
+          format: int32
+          example: 216
+          description: 'Unique identifier for a reporting frequency'
+        Description:
+          type: string
+          maxLength: 255
+          example: 'Basic: 1-hour moving, daily check-in'
+          description: 'The description is typically less than 50 characters and describes the reporting frequency configuration in more detail than "Name". "Name" is more for administrators and "Description" is more for end users.'  
+        Name:
+          type: string
+          maxLength: 255
+          example: '1d|10m'
+          description: 'The name is typically shorter than 30 characters in length and briefly describes the reporting frequency. Example: 1d|10m equates to 1-day while stationary, 10-minute while moving in addition to a daily check-in'
+        ProductID:
+          type: integer
+          format: int32
+          example: 54
+          description: 'This reporting frequency may only apply to devices with this ProductID. The /device and /device_list commands include a device''s ProductID'
+    User:
+      type: object
+      properties:
+        UserID:
+          type: integer
+          format: int32
+          example: 15779
+          description: 'Unique identifier for a user'
+        Department:
+          type: string
+          maxLength: 255
+          example: Engineering
+          description: 'Department of the user. N ull for consumer accounts.'
+        Email:
+          type: string
+          maxLength: 255
+          example: 'sample-email@blackhole.io'
+          description: 'Email also serves as username'  
+        LastActive:
+          type: string
+          format: date-time
+          example: '2021-08-27T23:21:50Z'
+          description: 'The datetime when the user was last active on the main gps tracking site. Format: 1985-04-12T23:20:50Z (Internet Date Standard ISO 8601 RFC 3339)'
+        Name:
+          type: string
+          maxLength: 255
+          example: Al Swearengen
+          description: 'Name of the user. Null for consumer accounts.'
+        OrgID:
+          type: integer
+          format: int32
+          example: 59
+          description: 'The OrgID of the organization which owns this user account.'
+        OrgName:
+          type: string
+          maxLength: 255
+          example: 'Sample Organization'
+          description: 'The organization name of the organization which owns this user account.'
+        Phone:
+          type: string
+          maxLength: 25
+          example: '5554443333'
+          description: 'the phone number for SMS notifications'
+        Unsubscribed_Email:
+          type: boolean
+          example: false
+          description: 'This will be true if the user has unsubscribed to email notifications by clicking the "unsubscribe" link in an email. This is simply a spam-compliance boolean and does not determine whether a user is opted into notifications for specific devices. A user may toggle device-level SMS and email notifications within the device listing of the main gps tracking site.'
+        Unsubscribed_SMS:
+          type: boolean
+          example: false
+          description: 'This will be true if the user has replied "STOP" (or similar) to an SMS notification. This is simply a spam-compliance boolean and does not determine whether a user is opted into notifications for specific devices. A user may toggle device-level SMS and email notifications within the device listing of the main gps tracking site.'
+       
+    Webhook_Container_GPSReport:
+      type: object
+      properties:
+        EventType:
+          type: string
+          example: gps_report
+          enum:
+          - gps_report
+          - serial_report
+          - gps_report_extended
+        GPS_Report:
+          $ref: '#/components/schemas/GPS_Report'
+          description: 'A GPS report object'
+        Mode:
+          type: string
+          example: live
+          enum:
+          - live
+          - test
+       
+    Webhook_Container_GPSReport_Extended:
+      type: object
+      properties:
+        EventType:
+          type: string
+          example: gps_report_extended
+          enum:
+          - gps_report
+          - serial_report
+          - gps_report_extended
+        GPS_Report_Extended:
+          $ref: '#/components/schemas/GPS_Report_Extended'
+          description: 'A GPS report (EXTENDED) object'
+        Mode:
+          type: string
+          example: live
+          enum:
+          - live
+          - test
