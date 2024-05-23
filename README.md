@@ -1,12 +1,54 @@
-# GPS-Project
-My GPS application
+# NavFleet Systems
 
-Server sdie dependencies to install: 
+## Table of Contents
 
-npm install express mongoose dotenv
-npm install nodemon --save-dev
+- [Deployed App](#Deployed-App)
+- [Video of functioning app](#Video)
+- [Description](#Description)
+- [Technologies](#Technologies)
+- [Links](#Links)
+- [Screenshots](#Screenshots)
+- [User Instructions](#User-Instructions)
+- [Contributors](#Contributors)
 
-Client side dependencies to install: 
+---
 
-npm install axios react-router-dom
-npm install concurrently --save-dev
+## Deployed App
+
+---
+
+## Video
+
+---
+
+## Description
+
+With NavFleet Systems, truck companies can streamline their operations, enhance productivity, and ensure the safety and security of their fleets. Experience the future of fleet management with our advanced GPS tracking application and take your business to new heights.
+
+---
+
+## Technologies
+
+---
+
+## Links
+
+---
+
+## Screenshots
+
+---
+
+## User Instructions
+
+---
+
+## Contributors
+
+- Alexis Watson
+- Jenifer Torres
+- Gabby Emperador
+- Ishar Sandhu
+- Nate Sanow
+
+---
