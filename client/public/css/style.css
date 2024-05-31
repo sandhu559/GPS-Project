@@ -6,3 +6,33 @@ body {
     background-position: center;
     background-color: rgb(146, 28, 28);
 }
+/* styles.css */
+body, html {
+    margin: 0;
+    padding: 0;
+    height: 100%;
+}
+
+nav ul {
+    list-style: none;
+    display: flex;
+    justify-content: center;
+    margin: 0;
+    padding: 0;
+}
+
+nav ul li {
+    margin: 0 1rem;
+}
+
+nav ul li a {
+    color: white;
+    text-decoration: none;
+    font-size: 1.2rem;
+}
+
+#map {
+    width: 180px;
+    height: 180px;
+    margin-top: 60px; /* Adjust according to the height of the header */
+}
