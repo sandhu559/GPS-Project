@@ -1,21 +1,19 @@
-if (process.env.NODE_ENV != "production") {
-    require("dotenv").config()
-};
-
+const dotenv = require('dotenv');
 const mongoose = require("mongoose");
 
-async function connectToDb() {
 
-    try {
-        await mongoose.connect(process.env.MONGO_URL);
-        console.log("its working")
-    } catch (err)
-    {
-        console.log(err)
-    }
-       
-}
+dotenv.config(); // Load environment variables from .env file
 
+const connectToDb = async () => {
+  try {
+    await mongoose.connect(process.env.MONGO_URI);
+    console.log('Its Wroking!');
+  } catch (err) {
+    console.error('Error connecting to MongoDB', err);
+    throw err;
+    
+  }
+};
 
 
 module.exports = connectToDb;
