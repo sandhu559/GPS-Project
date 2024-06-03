@@ -1,0 +1,92 @@
+
+body {
+    font-family: "poppins" ,sans-serif;
+    background-image: url('../assets/navfleet.jpg');
+    background-size: cover;
+    background-position: center;
+    background-color: rgb(146, 28, 28);
+}
+
+header{
+    font-size: 35px;
+    text-align: left;
+    height: 100px;
+}
+
+nav{
+    height: 70px;
+    text-align: right;
+    padding-top: 35px;
+
+}
+
+footer{
+    text-align: center;
+    
+}
+
+img{
+    padding-bottom: 50px;
+    
+}
+
+li{
+    font-size: 30px;
+    color: white;
+    text-align: center;
+    padding-bottom: 30px;
+}
+h2 {
+    font-size: 35px;
+    color: white;
+    text-align:center; 
+    padding-top: 50px;
+    
+}
+a{
+    text-decoration: none;
+    padding: 30px;
+    color: rgb(0, 0, 0);
+}
+
+.navbar-brand {
+    padding-bottom: -60px;
+}
+
+
+p{
+    text-align: center;
+    font-size: 30px;
+    color: white;
+}
+
+/* styles.css */
+body, html {
+    margin: 0;
+    padding: 0;
+    height: 100%;
+}
+
+nav ul {
+    list-style: none;
+    display: flex;
+    justify-content: center;
+    margin: 0;
+    padding: 0;
+}
+
+nav ul li {
+    margin: 0 1rem;
+}
+
+nav ul li a {
+    color: white;
+    text-decoration: none;
+    font-size: 1.2rem;
+}
+
+#map {
+    width: 180px;
+    height: 180px;
+    margin-top: 60px; /* Adjust according to the height of the header */
+}
