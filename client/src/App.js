@@ -26,7 +26,7 @@ const App = () => {
 };
 
 export default App;
-*/
+
 
 import React, { useEffect } from 'react';
 import L from 'leaflet';
@@ -56,4 +56,4 @@ const App = () => {
 };
 
 export default Map;
-
+*/
