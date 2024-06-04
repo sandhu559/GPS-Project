@@ -1,3 +1,17 @@
+/*
+document.addEventListener("DOMContentLoaded", function() {
+  var map = L.map('map').setView([51.505, -0.09], 13);
+
+  L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+      attribution: '© OpenStreetMap contributors'
+  }).addTo(map);
+
+  L.marker([51.505, -0.09]).addTo(map)
+      .bindPopup('A pretty CSS3 popup.<br> Easily customizable.')
+      .openPopup();
+});
+
+
 import React, { useEffect } from 'react';
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
@@ -26,4 +40,6 @@ const App = () => {
 };
 
 export default App;
+*/
 
+var marker = L.marker([38.4088, -121.3716]).addTo(map);

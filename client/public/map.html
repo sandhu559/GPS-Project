@@ -17,31 +17,47 @@
   integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo="
   crossorigin=""></script>
     <style>
-      #map {
-        height: 100vh;
-        width: 100%;
-      }
-    </style>
+      body {
+      display: flex;
+      height: 100vh;
+      margin: 15px;
+    }
+
+    .sidebar {
+      width: 25%;
+      padding: 10px;
+      box-sizing: border-box;
+    }
+
+    #map {
+      height: 100vh;
+      width: 75%;
+    }
+  </style>
 </head>
 <body>
-
-  
-
-  <noscript>You need to enable JavaScript to run this app.</noscript>
-  <div id="root"></div>
+  <div class="sidebar">
+    <button onclick="centerMap(38.5816, -121.4944)">Fleet 1</button>
+    <button onclick="centerMap(38.4088, -121.3716)">Fleet 2</button>
+    <button onclick="centerMap(38.5556, -121.4689)">Fleet 3</button>
+    <button onclick="centerMap(38.6370, -121.3841)">Fleet 4</button>
+  </div>
   <div id="map"></div>
+
   <script>
     var map = L.map('map').setView([38.5816, -121.4944], 11);
 
     L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', {
-    maxZoom: 19,
-    attribution: '&copy; <a href="http://www.openstreetmap.org/copyright">OpenStreetMap</a>'
+      maxZoom: 19,
+      attribution: '&copy; <a href="http://www.openstreetmap.org/copyright">OpenStreetMap</a>'
     }).addTo(map);
+
+    function centerMap(lat, lng) {
+      map.setView([lat, lng], 13);
+      L.marker([lat, lng]).addTo(map);
+    }
   </script>
     
-<script type="module" src="/client/src/App.jsx"></script>
-
-
+  <script type="module" src="/client/src/App.jsx"></script>
 </body>
 </html>
-
