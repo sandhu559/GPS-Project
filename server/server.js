@@ -1,11 +1,9 @@
 //import dependencies
 const express = require("express")
 const dotenv = require("dotenv");
-const connectToDb = require("./server/config/ConnectDB");
-const { createHandler } = require('graphql-http/lib/use/express');
-const { buildSchema } = require('graphql');
+const connectToDb = require("./config/ConnectDB");
 const bodyParser = require("body-parser")
-const GpsData = require("./server/models/gpsData")
+const GpsData = require("./models/gpsData")
 
 //create express app
 const app = express()
@@ -14,7 +12,18 @@ const app = express()
 app.use(bodyParser.json());
 
 
-connectToDb;
+const connectToDb = async () => {
+  try {
+    await mongoose.connect(process.env.MONGO_URI, {
+      useNewUrlParser: true,
+      useUnifiedTopology: true
+    });
+    console.log('MongoDB connected');
+  } catch (err) {
+    console.error('Error connecting to MongoDB:', err);
+    throw err;
+  }
+};
 
 //Routing
 app.get('/', (req, res) => {
@@ -59,8 +68,17 @@ const saveGpsDataToDatabase = async (data) => {
       hdop: gpsReport.HDOP
     });
   
-    await gpsData.save();
-  };
+    try {
+      // Save the new gpsData instance to the MongoDB collection
+      await gpsData.save();
+      console.log('Data saved to MongoDB:', JSON.stringify(gpsReport, null, 2)); // Log the saved data for confirmation
+      res.status(200).send('Webhook received'); // Respond with a success message
+    } catch (err) {
+      console.error('Error saving data:', err); // Log any errors that occur during saving
+      res.status(500).send('Error saving data'); // Respond with an error message
+    }
+  
+};
   
 
 // Start the server
