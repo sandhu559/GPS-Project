@@ -6,10 +6,12 @@
   "scripts": {
     "start": "concurrently \"npm run server --prefix server\" \"npm run client --prefix client\""
   },
+  "homepage": "https://sandhu559.github.io/GPS-Project",
   "dependencies": {
     "dotenv": "^16.4.5",
     "express": "^4.19.2",
-    "express-graphql": "^0.12.0"
+    "express-graphql": "^0.12.0",
+    "gh-pages": "^6.1.1"
   },
   "devDependencies": {
     "concurrently": "^8.2.2"
