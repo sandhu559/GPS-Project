@@ -1,7 +1,17 @@
 {
+  "name": "gps-project-root",
+  "version": "1.0.0",
+  "description": "Root package for GPS project",
+  "main": "server.js",
+  "scripts": {
+    "start": "concurrently \"npm run server --prefix server\" \"npm run client --prefix client\""
+  },
   "dependencies": {
     "dotenv": "^16.4.5",
     "express": "^4.19.2",
     "express-graphql": "^0.12.0"
+  },
+  "devDependencies": {
+    "concurrently": "^8.2.2"
   }
 }

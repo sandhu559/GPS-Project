@@ -1,12 +1,13 @@
 {
-  "name": "gps-project",
+  "name": "gps-project-server",
   "version": "1.0.0",
-  "description": "My GPS application",
+  "description": "Server side for GPS project",
   "main": "index.js",
   "scripts": {
-    "dev": "nodemon server.js",
+    "start": "nodemon server.js",
+    "dev": "concurrently \"npm run start\" \"npm run ngrok\"",
     "test": "echo \"Error: no test specified\" && exit 1",
-    "ngrok": "ngrok http 5000"
+    "ngrok": "ngrok http 80"
   },
   "keywords": [],
   "author": "",
@@ -16,8 +17,7 @@
     "express": "^4.19.2",
     "graphql-http": "^1.22.1",
     "mongoose": "^8.4.0",
-    "ngrok": "^5.0.0-beta.2",
-    "nodemon": "^3.1.0"
+    "ngrok": "^5.0.0-beta.2"
   },
   "devDependencies": {
     "concurrently": "^8.2.2",
