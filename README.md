@@ -127,7 +127,7 @@ gps-tracking-app/
 
 ## Screenshots
 
-
+![image](https://github.com/sandhu559/GPS-Project/assets/147440197/f6f42b69-c76d-403a-9ee7-05ac1eaad682)
 
 ## Contributors
 
